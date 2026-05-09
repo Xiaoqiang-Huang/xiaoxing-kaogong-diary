@@ -1,5 +1,5 @@
-"""
-日记Web系统启动脚本
+﻿"""
+小星考公日记启动脚本
 """
 import sys
 import os
@@ -56,7 +56,7 @@ def init_db():
 
 def main():
     print("=" * 50)
-    print("📔 四圣谏言日记系统")
+    print("📔 小星考公日记")
     print("=" * 50)
 
     # 初始化数据库
@@ -71,3 +71,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

@@ -1,9 +1,9 @@
-@echo off
+﻿@echo off
 setlocal
 cd /d "%~dp0"
 
 echo ==========================================
-echo Xiaoxing Diary - one click setup and run
+echo Xiaoxing Kaogong Diary - one click setup and run
 echo ==========================================
 
 where python >nul 2>nul
@@ -49,3 +49,4 @@ echo.
 python start.py
 
 pause
+

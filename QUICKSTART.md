@@ -1,4 +1,4 @@
-# Quick Start
+﻿# Quick Start
 
 ## Windows: one-click startup
 
@@ -66,3 +66,4 @@ OPENAI_TRANSCRIBE_MODEL=Systran/faster-whisper-small
 ```powershell
 python -m unittest discover tests -v
 ```
+

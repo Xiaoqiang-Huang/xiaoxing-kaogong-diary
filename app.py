@@ -1,5 +1,5 @@
-"""
-日记Web系统 - Flask主应用
+﻿"""
+小星考公日记 - Flask主应用
 """
 import os
 import logging
@@ -3731,3 +3731,4 @@ def create_tables():
 
 if __name__ == '__main__':
     app.run(host=Config.HOST, port=Config.PORT, debug=Config.DEBUG)
+

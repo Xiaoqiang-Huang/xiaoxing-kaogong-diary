@@ -1,5 +1,5 @@
-"""
-日记Web系统配置文件
+﻿"""
+小星考公日记配置文件
 """
 import os
 import secrets
@@ -90,3 +90,4 @@ class Config:
     CREATE_DEFAULT_USER = _get_bool('CREATE_DEFAULT_USER', False)
     DEFAULT_USERNAME = os.environ.get('DEFAULT_USERNAME', 'hxq')
     DEFAULT_PASSWORD = os.environ.get('DEFAULT_PASSWORD', '')
+
