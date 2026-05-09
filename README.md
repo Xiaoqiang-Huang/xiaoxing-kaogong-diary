@@ -34,6 +34,7 @@ Xiaoxing Kaogong Diary，一个 Flask 个人日记与考公复盘 Web 应用，�
 2. 双击 `setup_and_run.bat`
 3. 浏览器打开 `http://127.0.0.1:5000`
 4. 访问 `/register` 注册账号
+   > **第一个注册的用户自动成为管理员**，可以在 `/settings` 中配置 AI API
 
 脚本会自动：
 - 创建虚拟环境 `.venv`

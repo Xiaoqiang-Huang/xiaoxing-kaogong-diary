@@ -1216,8 +1216,13 @@ def register():
     if User.query.filter_by(username=username).first():
         return jsonify({'error': '用户名已存在'}), 400
 
+    # 第一个注册的用户自动成为管理员
+    is_first_user = User.query.count() == 0
+
     user = User(username=username, display_name=display_name or username)
     user.set_password(password)
+    if is_first_user:
+        user.is_admin = True
 
     db.session.add(user)
     db.session.commit()
@@ -1226,7 +1231,8 @@ def register():
     session['username'] = user.username
     session['display_name'] = user.get_display_name()
 
-    return jsonify({'message': '注册成功', 'user': user.to_dict()})
+    message = '注册成功' + ('，您是第一位用户，已自动设为管理员' if is_first_user else '')
+    return jsonify({'message': message, 'user': user.to_dict()})
 
 
 @app.route('/api/login', methods=['POST'])
