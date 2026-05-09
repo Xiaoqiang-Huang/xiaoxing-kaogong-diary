@@ -15,6 +15,16 @@ Xiaoxing Kaogong Diary，一个 Flask 个人日记与考公复盘 Web 应用，�
 
 请复制 `.env.example` 为 `.env` 后再填入自己的密钥。
 
+## 许可证
+
+本项目采用 [PolyForm Noncommercial License 1.0.0](LICENSE)。
+
+- 允许个人学习、研究、测试、非商业自用。
+- 允许非商业组织按许可证使用。
+- 商业使用、公司内部部署、二次开发销售、SaaS 服务化部署等，需要先获得作者书面授权。
+
+Commercial use requires prior written permission from the author.
+
 ## 快速开始
 
 ### Windows 一键启动
