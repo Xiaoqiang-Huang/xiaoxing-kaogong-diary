@@ -1,0 +1,9 @@
+services:
+  faster-whisper-server:
+    image: fedirz/faster-whisper-server:latest-cpu
+    container_name: diary-faster-whisper
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/huggingface-cache:/root/.cache/huggingface
+    restart: unless-stopped

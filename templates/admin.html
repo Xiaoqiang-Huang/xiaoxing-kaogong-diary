@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员面板 - 小星日记</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-lg);
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-xl);
+            padding-bottom: var(--space-md);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .admin-header h1 {
+            font-size: 24px;
+            color: var(--text);
+            margin: 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: var(--space-md);
+            border-radius: var(--radius-card);
+            border: var(--border-width) solid var(--border);
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: var(--space-xs);
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .user-list {
+            background: var(--bg-card);
+            border-radius: var(--radius-card);
+            border: var(--border-width) solid var(--border);
+            overflow: hidden;
+        }
+
+        .user-item {
+            padding: var(--space-md);
+            border-bottom: var(--border-width) solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-item:hover {
+            background: var(--overlay-light);
+        }
+
+        .user-info h3 {
+            margin: 0 0 4px 0;
+            font-size: 15px;
+            color: var(--text);
+        }
+
+        .user-info .meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .user-stats {
+            display: flex;
+            gap: var(--space-md);
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .user-actions {
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .btn-view {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: transparent;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text);
+            transition: all var(--duration) var(--ease-out);
+        }
+
+        .btn-view:hover {
+            background: var(--overlay-light);
+            border-color: var(--text-muted);
+        }
+
+        .admin-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: var(--accent);
+            color: white;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            margin-left: var(--space-sm);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-sm);
+            margin-top: var(--space-lg);
+        }
+
+        .pagination button {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text);
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: var(--overlay-light);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination button.active {
+            background: var(--text);
+            color: var(--bg-card);
+            border-color: var(--text);
+        }
+
+        /* 用户详情模态框 */
+        .user-detail-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .user-detail-modal.show {
+            display: flex;
+        }
+
+        .user-detail-content {
+            background: var(--bg);
+            border-radius: var(--radius-lg);
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-detail-header {
+            padding: var(--space-md) var(--space-lg);
+            border-bottom: var(--border-width) solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-detail-header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--text);
+        }
+
+        .user-detail-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-detail-body {
+            padding: var(--space-lg);
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .diary-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .diary-item {
+            background: var(--bg-card);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            border: var(--border-width) solid var(--border);
+        }
+
+        .diary-date {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: var(--space-xs);
+        }
+
+        .diary-content {
+            font-size: 14px;
+            color: var(--text);
+            max-height: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>管理员面板</h1>
+            <a href="/" class="btn-view">返回首页</a>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="stats-grid" id="stats">
+            <div class="stat-card">
+                <div class="label">总用户数</div>
+                <div class="value" id="totalUsers">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">总日记数</div>
+                <div class="value" id="totalDiaries">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">周活跃用户</div>
+                <div class="value" id="activeUsers">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">今日新增</div>
+                <div class="value" id="todayUsers">-</div>
+            </div>
+        </div>
+
+        <!-- 用户列表 -->
+        <h2 style="margin-bottom: var(--space-md);">用户列表</h2>
+        <div class="user-list" id="userList">
+            <div style="padding: var(--space-lg); text-align: center; color: var(--text-muted);">
+                加载中...
+            </div>
+        </div>
+
+        <!-- 分页 -->
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- 用户详情模态框 -->
+    <div class="user-detail-modal" id="userDetailModal">
+        <div class="user-detail-content">
+            <div class="user-detail-header">
+                <h2 id="userDetailTitle">用户详情</h2>
+                <button class="user-detail-close" onclick="closeUserDetail()">×</button>
+            </div>
+            <div class="user-detail-body" id="userDetailBody">
+                加载中...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+
+        // 检查管理员权限
+        async function checkAdmin() {
+            try {
+                const res = await fetch('/api/me');
+                if (!res.ok) {
+                    window.location.href = '/login';
+                    return false;
+                }
+                const data = await res.json();
+                if (!data.user.is_admin) {
+                    alert('需要管理员权限');
+                    window.location.href = '/';
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                console.error(e);
+                return false;
+            }
+        }
+
+        // 加载统计数据
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/admin/stats');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                document.getElementById('totalUsers').textContent = data.total_users || 0;
+                document.getElementById('totalDiaries').textContent = data.total_diaries || 0;
+                document.getElementById('activeUsers').textContent = data.active_users_week || 0;
+                document.getElementById('todayUsers').textContent = data.today_users || 0;
+            } catch (e) {
+                console.error('加载统计失败', e);
+            }
+        }
+
+        // 加载用户列表
+        async function loadUsers(page = 1) {
+            currentPage = page;
+            try {
+                const res = await fetch(`/api/admin/users?page=${page}&per_page=20`);
+                if (!res.ok) return;
+                const data = await res.json();
+
+                totalPages = data.pages;
+                renderUserList(data.users);
+                renderPagination();
+            } catch (e) {
+                console.error('加载用户列表失败', e);
+            }
+        }
+
+        // 渲染用户列表
+        function renderUserList(users) {
+            const container = document.getElementById('userList');
+
+            if (!users || users.length === 0) {
+                container.innerHTML = '<div style="padding: var(--space-lg); text-align: center; color: var(--text-muted);">暂无用户</div>';
+                return;
+            }
+
+            container.innerHTML = users.map(user => `
+                <div class="user-item">
+                    <div class="user-info">
+                        <h3>
+                            ${escapeHtml(user.username)}
+                            ${user.is_admin ? '<span class="admin-badge">管理员</span>' : ''}
+                        </h3>
+                        <div class="meta">
+                            注册于 ${new Date(user.created_at).toLocaleDateString('zh-CN')}
+                            ${user.last_activity ? ` · 最后活跃: ${new Date(user.last_activity).toLocaleDateString('zh-CN')}` : ''}
+                        </div>
+                    </div>
+                    <div class="user-stats">
+                        <span>${user.diary_count || 0} 篇日记</span>
+                        <span>${user.conversation_count || 0} 条对话</span>
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn-view" onclick="viewUser(${user.id})">查看详情</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染分页
+        function renderPagination() {
+            const container = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+
+            if (currentPage > 1) {
+                html += '<button onclick="loadUsers(currentPage - 1)">上一页</button>';
+            }
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === currentPage) {
+                    html += `<button class="active">${i}</button>`;
+                } else if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 2) {
+                    html += `<button onclick="loadUsers(${i})">${i}</button>`;
+                } else if (Math.abs(i - currentPage) === 3) {
+                    html += '<button disabled>...</button>';
+                }
+            }
+
+            if (currentPage < totalPages) {
+                html += '<button onclick="loadUsers(currentPage + 1)">下一页</button>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        // 查看用户详情
+        async function viewUser(userId) {
+            const modal = document.getElementById('userDetailModal');
+            const body = document.getElementById('userDetailBody');
+            const title = document.getElementById('userDetailTitle');
+
+            modal.classList.add('show');
+            body.innerHTML = '<div style="padding: var(--space-lg); text-align: center; color: var(--text-muted);">加载中...</div>';
+
+            try {
+                const res = await fetch(`/api/admin/user/${userId}`);
+                if (!res.ok) {
+                    body.innerHTML = '<div style="padding: var(--space-lg); text-align: center; color: var(--coral);">加载失败</div>';
+                    return;
+                }
+
+                const data = await res.json();
+                const user = data.user;
+
+                title.textContent = `用户详情: ${user.username}`;
+                body.innerHTML = `
+                    <div style="margin-bottom: var(--space-lg);">
+                        <h3 style="margin: 0 0 var(--space-sm) 0;">基本信息</h3>
+                        <p style="color: var(--text-light); margin: 4px 0;">用户ID: ${user.id}</p>
+                        <p style="color: var(--text-light); margin: 4px 0;">注册时间: ${new Date(user.created_at).toLocaleString('zh-CN')}</p>
+                        <p style="color: var(--text-light); margin: 4px 0;">日记数量: ${user.diary_count || 0}</p>
+                        <p style="color: var(--text-light); margin: 4px 0;">对话数量: ${user.conversation_count || 0}</p>
+                    </div>
+
+                    <h3 style="margin: 0 0 var(--space-sm) 0;">日记列表 (最近50篇)</h3>
+                    <div class="diary-list">
+                        ${user.diaries && user.diaries.length > 0 ? user.diaries.map(diary => `
+                            <div class="diary-item">
+                                <div class="diary-date">${diary.date}</div>
+                                <div class="diary-content">${escapeHtml(diary.content.substring(0, 200))}${diary.content.length > 200 ? '...' : ''}</div>
+                            </div>
+                        `).join('') : '<p style="color: var(--text-muted);">暂无日记</p>'}
+                    </div>
+                `;
+            } catch (e) {
+                console.error('加载用户详情失败', e);
+                body.innerHTML = '<div style="padding: var(--space-lg); text-align: center; color: var(--coral);">加载失败</div>';
+            }
+        }
+
+        // 关闭用户详情
+        function closeUserDetail() {
+            document.getElementById('userDetailModal').classList.remove('show');
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            const isAdmin = await checkAdmin();
+            if (isAdmin) {
+                loadStats();
+                loadUsers();
+            }
+        });
+
+        // 点击模态框外部关闭
+        document.getElementById('userDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeUserDetail();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设置 - 小星日记</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>">
+    <!-- CSS异步加载优化 -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/settings.css">
+</head>
+<body>
+    {% set feature_flags = features or {} %}
+    {% set kaogong_enabled = feature_flags.get('kaogong', {}).get('enabled', True) %}
+    <div class="app-container">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="header-left">
+                <a href="/" class="btn-back">← 返回</a>
+                <h1>⚙️ 功能设置</h1>
+            </div>
+            <div class="header-right">
+                <span class="username">{{ username }}</span>
+                {% if kaogong_enabled %}
+                <a href="/kaogong" class="btn-secondary">考公</a>
+                {% endif %}
+                <a href="/history" class="btn-secondary">日记</a>
+                <button id="logoutBtn" class="btn-logout">退出</button>
+            </div>
+        </header>
+
+        <!-- 主内容 -->
+        <main class="settings-container">
+            <!-- 考公模块设置 -->
+            <section class="settings-section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2>📚 考公复盘</h2>
+                        <p>管理考公相关功能的开关</p>
+                    </div>
+                    <label class="switch-control">
+                        <input type="checkbox" id="kaogongEnabled" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-grid" id="kaogongModules">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>📝 行测复盘</h3>
+                            <p>记录行测题目，统计正确率，分析薄弱环节</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" class="feature-toggle" data-module="kaogong" data-feature="xingce" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>🎤 面试复盘</h3>
+                            <p>语音练习面试题目，AI评价，记录复盘</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" class="feature-toggle" data-module="kaogong" data-feature="interview" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>📚 学习资料</h3>
+                            <p>上传和管理学习资料、模板、错题等</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" class="feature-toggle" data-module="kaogong" data-feature="materials" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>🎯 学习计划</h3>
+                            <p>设定学习目标，每日任务，进度追踪</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" class="feature-toggle" data-module="kaogong" data-feature="plan" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>📅 每日打卡</h3>
+                            <p>学习打卡，连续天数统计，激励坚持</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" class="feature-toggle" data-module="kaogong" data-feature="checkin" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 日记模块设置 -->
+            <section class="settings-section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2>📔 日记省察</h2>
+                        <p>管理日记相关功能的开关</p>
+                    </div>
+                    <label class="switch-control">
+                        <input type="checkbox" id="diaryEnabled" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-grid" id="diaryFeatures">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>🎤 语音输入</h3>
+                            <p>使用语音识别快速记录日记</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" class="feature-toggle" data-module="diary" data-feature="voice_input" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>🤖 AI分析</h3>
+                            <p>智能分析日记内容，提供反馈建议</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" class="feature-toggle" data-module="diary" data-feature="ai_analysis" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>📜 四圣谏言</h3>
+                            <p>四位智者视角的深度省察框架</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" class="feature-toggle" data-module="diary" data-feature="four_sages" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>📤 导出功能</h3>
+                            <p>导出日记为Markdown或其他格式</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" class="feature-toggle" data-module="diary" data-feature="export" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>📊 每日日报</h3>
+                            <p>生成日报、查看历史日报和周/月报入口</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" class="feature-toggle" data-module="diary" data-feature="daily_report" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>🧠 AI记忆识别</h3>
+                            <p>让AI从历史日记片段中识别未完成事项。开启后可能会把相关片段发送给已配置的AI服务。</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" class="feature-toggle" data-module="diary" data-feature="ai_memory_extract">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            {% if is_admin %}
+            <!-- 内置AI API设置 -->
+            <section class="settings-section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2>🤖 内置 AI API</h2>
+                        <p>管理员可更换对话、记忆识别、日报生成使用的 AI 接口，保存后立即生效</p>
+                    </div>
+                    <span id="aiConfigStatus" class="ai-status">读取中</span>
+                </div>
+
+                <form id="aiConfigForm" class="ai-config-form">
+                    <label class="form-row">
+                        <span>Base URL</span>
+                        <input type="url" id="aiBaseUrl" class="text-input" placeholder="https://example.com/api">
+                    </label>
+                    <label class="form-row">
+                        <span>API Key</span>
+                        <input type="password" id="aiApiKey" class="text-input" autocomplete="new-password" placeholder="留空表示不更换当前密钥">
+                    </label>
+                    <div class="ai-config-actions">
+                        <span id="aiKeyHint" class="setting-hint"></span>
+                        <button type="submit" id="saveAiConfigBtn" class="btn-primary">保存并热重载</button>
+                    </div>
+                </form>
+            </section>
+            {% endif %}
+
+            <!-- 通知设置 -->
+            <section class="settings-section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2>🔔 通知设置</h2>
+                        <p>设置提醒和通知偏好</p>
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>⏰ 每日提醒</h3>
+                            <p>每天固定时间提醒写日记/学习</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" id="dailyReminder" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>🔥 打卡提醒</h3>
+                            <p>连续打卡中断前发送提醒</p>
+                        </div>
+                        <label class="switch-control small">
+                            <input type="checkbox" id="streakReminder" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>🕐 提醒时间</h3>
+                            <p>设置每日提醒的时间</p>
+                        </div>
+                        <input type="time" id="reminderTime" value="08:00" class="time-input">
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/js/settings.js"></script>
+    <script>
+        // 设置退出按钮
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            if (confirm('确定要退出登录吗？')) {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>考公复盘 - 小星日记</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>">
+
+    <!-- CSS异步加载优化 -->
+    <link rel="stylesheet" href="/static/css/style.css?v=20260509-voice-records-register">
+    <link rel="stylesheet" href="/static/css/kaogong.css?v=20260509-voice-records-register">
+    <link rel="preload" href="/static/js/kaogong.js?v=20260509-voice-records-register" as="script">
+</head>
+<body>
+    {% set feature_flags = features or {} %}
+    {% set kaogong_modules = feature_flags.get('kaogong', {}).get('modules', {}) %}
+    <div class="app-container">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="header-left">
+                <a href="/" class="btn-back">← 返回</a>
+                <h1>📚 考公复盘</h1>
+            </div>
+            <div class="header-right">
+                <span class="username">{{ username }}</span>
+                <a href="/history" class="btn-secondary">日记</a>
+                <a href="/settings" class="btn-icon" title="设置">⚙️</a>
+                <button id="logoutBtn" class="btn-logout">退出</button>
+            </div>
+        </header>
+
+        <!-- 主内容区域 -->
+        <main class="kaogong-container">
+            <section class="workflow-panel" aria-labelledby="workflowTitle">
+                <div class="workflow-copy">
+                    <div class="workflow-eyebrow">今日备考流程</div>
+                    <h2 id="workflowTitle">先做题，再开口练，最后复盘沉淀</h2>
+                    <p>把一次备考压成三个动作：记录1道行测题、完成1道面试题、保存当天反思。</p>
+                </div>
+                <div class="workflow-actions" aria-label="快速开始">
+                    <button class="quick-action primary" data-feature-panel="xingce" onclick="openAddQuestionFlow()">
+                        <span class="quick-action-icon">📝</span>
+                        <span>
+                            <strong>记行测题</strong>
+                            <small>错因和用时一起记</small>
+                        </span>
+                    </button>
+                    <button class="quick-action" data-feature-panel="interview" onclick="openInterviewFlow()">
+                        <span class="quick-action-icon">🎤</span>
+                        <span>
+                            <strong>练面试题</strong>
+                            <small>按测评要素评分</small>
+                        </span>
+                    </button>
+                    <button class="quick-action" data-feature-panel="materials" onclick="openMaterialsFlow()">
+                        <span class="quick-action-icon">📚</span>
+                        <span>
+                            <strong>存资料</strong>
+                            <small>模板和错题归档</small>
+                        </span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 导航标签 -->
+            <nav class="tab-navigation" aria-label="考公复盘导航">
+                <button class="tab-btn active" data-tab="dashboard">
+                    <span class="tab-icon">📊</span>
+                    <span class="tab-text">仪表板</span>
+                </button>
+                <button class="tab-btn" data-tab="plan" data-feature-tab="plan">
+                    <span class="tab-icon">🎯</span>
+                    <span class="tab-text">学习计划</span>
+                </button>
+                <button class="tab-btn" data-tab="xingce" data-feature-tab="xingce">
+                    <span class="tab-icon">📝</span>
+                    <span class="tab-text">行测复盘</span>
+                </button>
+                <button class="tab-btn" data-tab="interview" data-feature-tab="interview">
+                    <span class="tab-icon">🎤</span>
+                    <span class="tab-text">面试复盘</span>
+                </button>
+                <button class="tab-btn" data-tab="materials" data-feature-tab="materials">
+                    <span class="tab-icon">📚</span>
+                    <span class="tab-text">学习资料</span>
+                </button>
+            </nav>
+
+            <!-- 仪表板 -->
+            <div class="tab-content active" id="dashboard">
+                <div class="dashboard-grid">
+                    <!-- 行测统计卡片 -->
+                    <div class="stat-card" data-feature-panel="xingce">
+                        <h3>📝 行测统计</h3>
+                        <div class="stat-overview">
+                            <div class="stat-number" id="xingceTotal">0</div>
+                            <div class="stat-label">总题数</div>
+                        </div>
+                        <div class="stat-accuracy">
+                            <span class="accuracy-label">正确率</span>
+                            <span class="accuracy-value" id="xingceAccuracy">0%</span>
+                        </div>
+                        <div class="stat-breakdown" id="xingceBreakdown">
+                            <!-- 动态填充 -->
+                        </div>
+                        <button class="card-action" onclick="openAddQuestionFlow()">记录新题</button>
+                    </div>
+
+                    <!-- 面试统计卡片 -->
+                    <div class="stat-card" data-feature-panel="interview">
+                        <h3>🎤 面试复盘</h3>
+                        <div class="stat-overview">
+                            <div class="stat-number" id="interviewTotal">0</div>
+                            <div class="stat-label">练习次数</div>
+                        </div>
+                        <div class="recent-list" id="recentInterview">
+                            <p class="empty-hint">暂无面试记录</p>
+                        </div>
+                        <button class="card-action" onclick="openInterviewFlow()">开始练习</button>
+                    </div>
+
+                    <!-- 学习资料卡片 -->
+                    <div class="stat-card" data-feature-panel="materials">
+                        <h3>📚 学习资料</h3>
+                        <div class="stat-overview">
+                            <div class="stat-number" id="materialTotal">0</div>
+                            <div class="stat-label">资料数量</div>
+                        </div>
+                        <button class="btn-primary" onclick="showUploadMaterial()" data-icon="📤">
+                            上传资料
+                        </button>
+                    </div>
+
+                    <!-- 今日行动卡片 -->
+                    <div class="stat-card today-plan-card" data-feature-panel="plan">
+                        <h3>🎯 今日行动</h3>
+                        <div class="plan-focus" id="todayPlanFocus">正在生成建议...</div>
+                        <div class="plan-reason" id="todayPlanReason"></div>
+                        <div class="plan-actions" id="todayPlanActions">
+                            <!-- 动态填充 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 最近记录 -->
+                <div class="recent-section">
+                    <h2>🕐 最近记录</h2>
+                    <div class="recent-tabs">
+                        <button class="recent-tab active" data-type="xingce" data-feature-panel="xingce">行测</button>
+                        <button class="recent-tab" data-type="interview" data-feature-panel="interview">面试</button>
+                    </div>
+                    <div class="recent-list" id="recentRecords">
+                        <!-- 动态填充 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 学习计划 -->
+            <div class="tab-content" id="plan">
+                <div class="plan-grid">
+                    <!-- 打卡卡片 -->
+                    <div class="checkin-card">
+                        <div class="checkin-header">
+                            <h3>📅 今日打卡</h3>
+                            <div class="streak-badge" id="streakBadge">已连续 <span id="streakDays">0</span> 天</div>
+                        </div>
+                        <div class="checkin-status" id="checkinStatus">
+                            <p class="checkin-tip" id="checkinTip">今天还没有打卡哦</p>
+                            <button class="btn-primary" onclick="showCheckinModal()" id="checkinBtn" data-icon="📅">
+                                立即打卡
+                            </button>
+                        </div>
+                        <div class="checkin-stats" id="checkinStats" style="display:none;">
+                            <div class="stat-row">
+                                <span class="stat-label">学习时长</span>
+                                <span class="stat-value" id="todayDuration">0 分钟</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">完成任务</span>
+                                <span class="stat-value" id="todayTasks">0 个</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">行测题数</span>
+                                <span class="stat-value" id="todayXingce">0 题</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 今日任务 -->
+                    <div class="today-tasks-card">
+                        <div class="card-header">
+                            <h3>📋 今日任务</h3>
+                            <button class="btn-template" onclick="showAddTaskModal()">+ 添加</button>
+                        </div>
+                        <div class="tasks-list" id="todayTasksList">
+                            <p class="empty-hint">今天还没有任务</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 学习目标 -->
+                <div class="goals-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <h2>🎯 学习目标</h2>
+                            <p>设定目标，追踪进度，保持动力</p>
+                        </div>
+                        <button class="btn-primary" onclick="showAddGoalModal()">+ 新建目标</button>
+                    </div>
+                    <div class="goals-list" id="goalsList">
+                        <!-- 动态填充 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 行测复盘 -->
+            <div class="tab-content" id="xingce">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2>📝 行测复盘</h2>
+                        <p>每道题只记录关键事实：题型、答案、用时、错因。</p>
+                    </div>
+                    <div class="header-actions">
+                        <select id="xingceTypeFilter" class="filter-select">
+                            <option value="">全部类型</option>
+                            <option value="verbal">言语理解</option>
+                            <option value="quantitative">数量关系</option>
+                            <option value="reasoning">判断推理</option>
+                            <option value="data_analysis">资料分析</option>
+                            <option value="general">常识判断</option>
+                        </select>
+                        <select id="xingceStatusFilter" class="filter-select">
+                            <option value="">全部状态</option>
+                            <option value="correct">正确</option>
+                            <option value="wrong">错误</option>
+                        </select>
+                        <button class="btn-primary" onclick="showAddQuestion()" data-icon="+">添加题目</button>
+                    </div>
+                </div>
+
+                <div class="xingce-list" id="xingceList">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+
+            <!-- 面试复盘 -->
+            <div class="tab-content" id="interview">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2>🎤 面试复盘</h2>
+                        <p>按公务员面试测评要素练表达，不只看“答没答完”。</p>
+                    </div>
+                    <div class="header-actions">
+                        <select id="interviewCategoryFilter" class="filter-select">
+                            <option value="">全部分类</option>
+                            <option value="self_intro">自我介绍</option>
+                            <option value="comprehensive">综合分析</option>
+                            <option value="emergency">应急应变</option>
+                            <option value="interpersonal">人际关系</option>
+                            <option value="organization">组织协调</option>
+                            <option value="vocational">职位认知</option>
+                            <option value="situation">情景模拟</option>
+                            <option value="leaderless_group">无领导小组</option>
+                            <option value="professional">专业专项</option>
+                        </select>
+                        <button class="btn-primary" onclick="showInterviewPractice()" data-icon="▶️">开始练习</button>
+                    </div>
+                </div>
+
+                <div class="interview-list" id="interviewList">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+
+            <!-- 学习资料 -->
+            <div class="tab-content" id="materials">
+                <div class="section-header">
+                    <div class="section-title">
+                        <h2>📚 学习资料</h2>
+                        <p>把模板、错题截图和岗位资料放到一处，复盘时能快速找到。</p>
+                    </div>
+                    <button class="btn-primary" onclick="showUploadMaterial()" data-icon="📤">上传资料</button>
+                </div>
+
+                <div class="materials-list" id="materialsList">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 添加题目对话框 -->
+    <div id="addQuestionModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="addQuestionTitle" style="display:none;">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 id="addQuestionTitle">📝 添加行测题目</h2>
+                <button class="modal-close" onclick="closeModal('addQuestionModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addQuestionForm">
+                    <div class="form-group">
+                        <label>题目类型</label>
+                        <select name="question_type" required>
+                            <option value="verbal">言语理解</option>
+                            <option value="quantitative">数量关系</option>
+                            <option value="reasoning">判断推理</option>
+                            <option value="data_analysis">资料分析</option>
+                            <option value="general">常识判断</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>题目内容</label>
+                        <textarea name="content" rows="4" required placeholder="输入题目内容..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>选项（可选）</label>
+                        <div class="options-input">
+                            <input type="text" name="option_a" placeholder="A. 选项A">
+                            <input type="text" name="option_b" placeholder="B. 选项B">
+                            <input type="text" name="option_c" placeholder="C. 选项C">
+                            <input type="text" name="option_d" placeholder="D. 选项D">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>正确答案</label>
+                            <input type="text" name="correct_answer" placeholder="如：A 或 C">
+                        </div>
+                        <div class="form-group">
+                            <label>我的答案</label>
+                            <input type="text" name="user_answer" placeholder="如：B">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>用时(秒)</label>
+                            <input type="number" name="time_spent" placeholder="60">
+                        </div>
+                        <div class="form-group">
+                            <label>是否正确</label>
+                            <select name="is_correct">
+                                <option value="">未知</option>
+                                <option value="true">正确</option>
+                                <option value="false">错误</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>题目解析（可选）</label>
+                        <textarea name="analysis" rows="3" placeholder="输入题目解析..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>上传题目图片</label>
+                        <input type="file" id="questionImage" accept="image/*">
+                        <div id="imagePreview" class="image-preview"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('addQuestionModal')">取消</button>
+                <button class="btn-primary" onclick="submitQuestion()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 面试练习对话框 -->
+    <div id="interviewPracticeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="interviewPracticeTitle" style="display:none;">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 id="interviewPracticeTitle">🎤 面试练习</h2>
+                <button class="modal-close" onclick="closeInterviewPractice()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="interview-setup" id="interviewSetup">
+                    <div class="form-group">
+                        <label>选择题目分类</label>
+                        <select id="practiceCategory">
+                            <option value="random">随机题目</option>
+                            <option value="self_intro">自我介绍</option>
+                            <option value="comprehensive">综合分析</option>
+                            <option value="emergency">应急应变</option>
+                            <option value="interpersonal">人际关系</option>
+                            <option value="organization">组织协调</option>
+                            <option value="vocational">职位认知</option>
+                            <option value="situation">情景模拟</option>
+                            <option value="leaderless_group">无领导小组</option>
+                            <option value="professional">专业专项</option>
+                        </select>
+                    </div>
+                    <div class="interview-guidance" id="interviewGuidance">
+                        <div class="guidance-title">测评要素</div>
+                        <div class="guidance-content">选择题型后显示本题训练重点。</div>
+                    </div>
+                    <button class="btn-primary" onclick="startInterview()">开始面试</button>
+                </div>
+
+                <div class="interview-session" id="interviewSession" style="display:none;">
+                    <div class="interview-flow-steps" id="flowSteps">
+                        <span class="flow-step" id="flowStepPrep">
+                            <span>📋</span>
+                            <span>思考</span>
+                        </span>
+                        <span class="flow-step-arrow">→</span>
+                        <span class="flow-step" id="flowStepAnswer">
+                            <span>🎤</span>
+                            <span>作答</span>
+                        </span>
+                        <span class="flow-step-arrow">→</span>
+                        <span class="flow-step" id="flowStepReview">
+                            <span>📊</span>
+                            <span>评价</span>
+                        </span>
+                    </div>
+
+                    <!-- 思考阶段 -->
+                    <div class="prep-phase" id="prepPhase" style="display:none;">
+                        <h3>📋 思考时间</h3>
+                        <p class="prep-instructions">请利用这段时间整理答题思路。可以参考下方的答题框架。</p>
+                        <div class="prep-timer" id="prepTimer">60</div>
+                        <div class="prep-framework" id="prepFramework">
+                            <h4>答题框架</h4>
+                            <ul id="prepFrameworkList"></ul>
+                        </div>
+                        <div class="prep-actions">
+                            <button class="btn-secondary" onclick="skipPrepPhase()">跳过思考</button>
+                            <button class="btn-primary" onclick="startAnswerPhase()">开始作答</button>
+                        </div>
+                    </div>
+
+                    <!-- 作答阶段 -->
+                    <div class="answer-phase" id="answerPhase">
+                        <div class="question-display" id="interviewQuestion"></div>
+
+                        <!-- 答题框架提示（可折叠） -->
+                        <div class="answer-framework-card collapsed" id="answerFrameworkCard">
+                            <div class="answer-framework-header" onclick="toggleFrameworkCard()">
+                                <h4>💡 答题框架提示</h4>
+                                <span class="toggle-icon">▼</span>
+                            </div>
+                            <div class="framework-content" id="answerFrameworkContent"></div>
+                        </div>
+
+                        <div class="remaining-time-alert" id="remainingTimeAlert" style="display:none;">
+                            剩余时间约 <strong id="remainingTimeText">60秒</strong>
+                        </div>
+                        <div class="timer" id="answerTimer">00:00</div>
+                        <div class="timer-progress">
+                            <div class="timer-progress-bar" id="timerProgressBar" style="width: 0%"></div>
+                        </div>
+                        <div class="time-suggestion" id="timeSuggestion">
+                            建议 <span class="recommended" id="recommendedTimeDisplay">2:30</span> · 当前 <span class="current" id="currentTimeDisplay">0:00</span>
+                        </div>
+
+                        <div class="voice-status-indicator text-answer-indicator" id="voiceStatusIndicator">
+                            <span class="status-dot"></span>
+                            <span class="status-text" id="voiceStatusText">文字答题模式</span>
+                        </div>
+
+                        <div class="interview-dictation-bar">
+                            <button type="button" class="btn-template interview-voice-btn" id="interviewVoiceBtn" onclick="toggleInterviewVoiceRecording()">
+                                🎙️ 语音转文字
+                            </button>
+                            <span>使用服务器端 faster-whisper 转写，不依赖浏览器中文语音识别。</span>
+                        </div>
+
+                        <div class="transcript-area">
+                            <textarea id="answerText" rows="10" placeholder="请直接输入你的回答。建议先写总观点，再分点展开，最后回扣题目。"></textarea>
+                            <div class="transcript-status" id="transcriptStatus">
+                                <span class="status-dot"></span>
+                                <span id="transcriptStatusText">等待文字输入</span>
+                            </div>
+                        </div>
+
+                        <!-- 文字作答统计 -->
+                        <div class="speech-stats" id="speechStats" style="display:none;">
+                            <div class="stat-item">
+                                <div class="stat-value" id="statWordCount">0</div>
+                                <div class="stat-label">字数</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="statSpeed">0</div>
+                                <div class="stat-label">字/分</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="interview-actions">
+                        <button class="btn-secondary" onclick="submitAnswer()">提交回答</button>
+                        <button class="btn-secondary" onclick="skipQuestion()">跳过此题</button>
+                    </div>
+                </div>
+
+                <div class="interview-result" id="interviewResult" style="display:none;">
+                    <h3>📊 AI 评价</h3>
+                    <div class="evaluation-content" id="evaluationContent"></div>
+
+                    <!-- 参考答案 -->
+                    <div class="reference-answer" id="referenceAnswer" style="display:none;">
+                        <div class="reference-answer-header">
+                            <h4>📚 参考答案</h4>
+                            <button class="btn-template" onclick="toggleReferenceAnswer()" id="toggleRefBtn">展开</button>
+                        </div>
+                        <div class="reference-answer-content" id="referenceAnswerContent" style="display:none;"></div>
+                    </div>
+
+                    <div class="reflection-area">
+                        <label>自我反思</label>
+                        <textarea id="selfReflection" rows="4" placeholder="写下你的自我反思..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeInterviewPractice()">关闭</button>
+                <button class="btn-primary" id="saveReflectionBtn" style="display:none;" onclick="saveReflection()">保存复盘</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 面试复盘详情 -->
+    <div id="interviewRecordModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="interviewRecordTitle" style="display:none;">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 id="interviewRecordTitle">面试复盘详情</h2>
+                <button class="modal-close" onclick="closeInterviewRecordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="interviewRecordDetail" class="interview-record-detail"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeInterviewRecordModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上传资料对话框 -->
+    <div id="uploadMaterialModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="uploadMaterialTitle" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="uploadMaterialTitle">📚 上传学习资料</h2>
+                <button class="modal-close" onclick="closeModal('uploadMaterialModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadMaterialForm">
+                    <div class="form-group">
+                        <label>资料标题</label>
+                        <input type="text" name="title" required placeholder="输入资料标题...">
+                    </div>
+                    <div class="form-group">
+                        <label>资料类型</label>
+                        <select name="material_type" required>
+                            <option value="xingce">行测资料</option>
+                            <option value="interview">面试资料</option>
+                            <option value="general">综合资料</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>上传文件</label>
+                        <input type="file" name="file" accept=".pdf,.doc,.docx,.txt" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('uploadMaterialModal')">取消</button>
+                <button class="btn-primary" onclick="uploadMaterial()">上传</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="mobile-action-bar" aria-label="移动端快捷操作">
+        <button onclick="openAddQuestionFlow()">
+            <span class="action-icon">📝</span>
+            <span class="action-text">记题</span>
+        </button>
+        <button onclick="openInterviewFlow()">
+            <span class="action-icon">🎤</span>
+            <span class="action-text">面试</span>
+        </button>
+        <button onclick="openMaterialsFlow()">
+            <span class="action-icon">📚</span>
+            <span class="action-text">资料</span>
+        </button>
+        <button onclick="switchTab('dashboard')">
+            <span class="action-icon">📊</span>
+            <span class="action-text">仪表</span>
+        </button>
+    </nav>
+
+    <!-- 打卡对话框 -->
+    <div id="checkinModal" class="modal" role="dialog" aria-modal="true" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📅 今日打卡</h2>
+                <button class="modal-close" onclick="closeModal('checkinModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="checkinForm">
+                    <div class="form-group">
+                        <label>今天学习了多少分钟？</label>
+                        <input type="number" id="checkinDuration" min="0" max="1440" value="60" placeholder="学习时长">
+                    </div>
+                    <div class="form-group">
+                        <label>完成了几个任务？</label>
+                        <input type="number" id="checkinTasks" min="0" value="0" placeholder="完成任务数">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>行测题数</label>
+                            <input type="number" id="checkinXingce" min="0" value="0" placeholder="做题数量">
+                        </div>
+                        <div class="form-group">
+                            <label>面试练习</label>
+                            <input type="number" id="checkinInterview" min="0" value="0" placeholder="练习次数">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>今天的心情如何？</label>
+                        <div class="mood-selector">
+                            <label class="mood-option">
+                                <input type="radio" name="mood" value="happy">
+                                <span>😊 开心</span>
+                            </label>
+                            <label class="mood-option">
+                                <input type="radio" name="mood" value="normal" checked>
+                                <span>😐 平常</span>
+                            </label>
+                            <label class="mood-option">
+                                <input type="radio" name="mood" value="tired">
+                                <span>😴 疲惫</span>
+                            </label>
+                            <label class="mood-option">
+                                <input type="radio" name="mood" value="stressed">
+                                <span>😰 焦虑</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>今日总结（可选）</label>
+                        <textarea id="checkinSummary" rows="3" placeholder="记录今天的收获和感悟..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('checkinModal')">取消</button>
+                <button class="btn-primary" onclick="submitCheckin()">打卡</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加任务对话框 -->
+    <div id="addTaskModal" class="modal" role="dialog" aria-modal="true" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📋 添加学习任务</h2>
+                <button class="modal-close" onclick="closeModal('addTaskModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addTaskForm">
+                    <div class="form-group">
+                        <label>任务类型</label>
+                        <select id="taskType">
+                            <option value="xingce">行测练习</option>
+                            <option value="interview">面试练习</option>
+                            <option value="reading">阅读学习</option>
+                            <option value="practice">综合练习</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>任务标题</label>
+                        <input type="text" id="taskTitle" required placeholder="如：做10道言语理解题">
+                    </div>
+                    <div class="form-group">
+                        <label>任务数量</label>
+                        <input type="number" id="taskTarget" min="1" value="1" placeholder="目标数量">
+                    </div>
+                    <div class="form-group">
+                        <label>任务日期</label>
+                        <input type="date" id="taskDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>备注（可选）</label>
+                        <textarea id="taskDescription" rows="2" placeholder="添加备注..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('addTaskModal')">取消</button>
+                <button class="btn-primary" onclick="submitTask()">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加目标对话框 -->
+    <div id="addGoalModal" class="modal" role="dialog" aria-modal="true" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🎯 新建学习目标</h2>
+                <button class="modal-close" onclick="closeModal('addGoalModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addGoalForm">
+                    <div class="form-group">
+                        <label>目标类型</label>
+                        <select id="goalType">
+                            <option value="xingce">行测目标</option>
+                            <option value="interview">面试目标</option>
+                            <option value="comprehensive">综合目标</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>目标标题</label>
+                        <input type="text" id="goalTitle" required placeholder="如：行测达到70分">
+                    </div>
+                    <div class="form-group">
+                        <label>目标描述</label>
+                        <textarea id="goalDescription" rows="2" placeholder="描述具体的目标内容..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>目标值</label>
+                            <input type="number" id="goalTarget" min="1" placeholder="如：70">
+                        </div>
+                        <div class="form-group">
+                            <label>单位</label>
+                            <input type="text" id="goalUnit" placeholder="如：分、题、小时">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>开始日期</label>
+                            <input type="date" id="goalStartDate">
+                        </div>
+                        <div class="form-group">
+                            <label>目标完成日期</label>
+                            <input type="date" id="goalEndDate">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>优先级</label>
+                        <select id="goalPriority">
+                            <option value="high">高优先级</option>
+                            <option value="medium" selected>中优先级</option>
+                            <option value="low">低优先级</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('addGoalModal')">取消</button>
+                <button class="btn-primary" onclick="submitGoal()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.enabledFeatures = {{ feature_flags|tojson }};
+    </script>
+    <script src="/static/js/kaogong.js?v=20260509-voice-records-register"></script>
+</body>
+</html>

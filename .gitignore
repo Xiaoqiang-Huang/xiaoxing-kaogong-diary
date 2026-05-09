@@ -1,0 +1,14 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+
+data/*.db
+*.log
+
+static/uploads/
+chroma_db/
+tools/cloudflared.exe
+cloudflared_*.log

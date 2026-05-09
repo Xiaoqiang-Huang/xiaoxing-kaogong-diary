@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史记录 - 日记系统</title>
+    <!-- CSS异步加载优化 -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* 日记详情样式 */
+        .diary-detail {
+            line-height: 1.8;
+            color: var(--text-primary);
+        }
+
+        .diary-detail h1 {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .diary-detail h2 {
+            font-size: 20px;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .diary-detail h3 {
+            font-size: 18px;
+            margin-top: 16px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .diary-detail p {
+            margin-bottom: 12px;
+        }
+
+        .diary-detail ul, .diary-detail ol {
+            margin-left: 24px;
+            margin-bottom: 12px;
+        }
+
+        .diary-detail li {
+            margin-bottom: 6px;
+        }
+
+        .diary-detail code {
+            background: var(--bg-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+        }
+
+        .diary-detail pre {
+            background: var(--bg-color);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 12px;
+        }
+
+        .diary-detail pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .diary-detail blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 16px;
+            margin: 12px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .diary-detail strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .diary-detail em {
+            color: var(--text-secondary);
+        }
+
+        /* 今日要事样式 */
+        .events-section {
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .events-section h3 {
+            margin-top: 0;
+            color: #166534;
+        }
+
+        /* 四圣谏言样式 */
+        .sages-section {
+            background: #fef3c7;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .sage-item {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed #f59e0b;
+        }
+
+        .sage-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .sage-name {
+            font-weight: 600;
+            color: #92400e;
+        }
+
+        /* 分析结果样式 */
+        .analysis-section {
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .analysis-section h3 {
+            margin-top: 0;
+            color: #3730a3;
+        }
+
+        .emotion-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .emotion-positive {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .emotion-neutral {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .emotion-negative {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .keyword-tag {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 13px;
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+
+        /* 模态框更大 */
+        .modal-content.diary-modal {
+            max-width: 900px;
+        }
+
+        .modal-body.diary-content {
+            padding: 24px;
+            max-height: 70vh;
+        }
+
+        /* 情绪图表样式 */
+        #emotionChartModal .modal-content {
+            max-width: 900px;
+        }
+
+        #emotionChartModal .modal-body {
+            padding: 20px;
+        }
+
+        .emotion-chart-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .emotion-chart-controls select {
+            max-width: 150px;
+        }
+
+        .emotion-chart-wrap {
+            position: relative;
+            height: 340px;
+            width: 100%;
+        }
+
+        .emotion-chart-hint {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin: 10px 0 0;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                overflow-x: hidden;
+            }
+
+            .header {
+                gap: 8px;
+            }
+
+            .header-left {
+                min-width: 0;
+                gap: 8px;
+            }
+
+            .header-left h1 {
+                font-size: 16px;
+                white-space: nowrap;
+            }
+
+            .header-right {
+                gap: 6px;
+                flex-wrap: nowrap;
+            }
+
+            .header-right .username,
+            .header-right .btn-secondary {
+                display: none;
+            }
+
+            .btn-back,
+            .btn-logout {
+                padding: 6px 9px;
+                font-size: 12px;
+                white-space: nowrap;
+            }
+
+            .search-bar {
+                max-width: 100%;
+                padding: 8px;
+                margin: 8px 0;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+
+            .search-bar input {
+                grid-column: 1 / -1;
+                min-width: 0;
+                width: 100%;
+            }
+
+            .search-bar button {
+                min-width: 0;
+                padding: 8px 6px;
+                font-size: 12px;
+                white-space: nowrap;
+            }
+
+            .history-container {
+                max-width: 100%;
+                padding: 0 8px 12px;
+                overflow-x: hidden;
+            }
+
+            .diary-card {
+                padding: 12px;
+                max-width: 100%;
+                overflow-wrap: anywhere;
+            }
+
+            .diary-header {
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+
+            .diary-content,
+            .diary-detail {
+                max-width: 100%;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+
+            .keyword-tag,
+            .emotion-badge {
+                margin-bottom: 6px;
+            }
+
+            .modal-content.diary-modal,
+            #emotionChartModal .modal-content,
+            .modal-content.report-modal {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+            }
+
+            .modal-body.diary-content,
+            #emotionChartModal .modal-body,
+            #reportContent {
+                padding: 12px;
+                max-height: calc(100vh - 58px);
+            }
+
+            #emotionChart {
+                width: 100% !important;
+                max-width: 100%;
+                height: 100% !important;
+            }
+
+            .emotion-chart-controls {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .emotion-chart-wrap {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% set feature_flags = features or {} %}
+    {% set kaogong_enabled = feature_flags.get('kaogong', {}).get('enabled', True) %}
+    {% set diary_features = feature_flags.get('diary', {}).get('features', {}) %}
+    {% set diary_report_enabled = feature_flags.get('diary', {}).get('enabled', True) and diary_features.get('daily_report', True) %}
+    {% set diary_ai_enabled = feature_flags.get('diary', {}).get('enabled', True) and diary_features.get('ai_analysis', True) %}
+    <div class="app-container">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="header-left">
+                <a href="/" class="btn-back">← 返回</a>
+                <h1>历史日记</h1>
+            </div>
+            <div class="header-right">
+                <span class="username">{{ username }}</span>
+                <a href="/" class="btn-secondary">返回对话</a>
+                {% if kaogong_enabled %}
+                <a href="/kaogong" class="btn-secondary" style="background:var(--primary-light);color:var(--primary);">📚 考公复盘</a>
+                {% endif %}
+                <a href="/settings" class="btn-icon" title="设置">⚙️</a>
+                <button id="logoutBtn" class="btn-logout">退出</button>
+            </div>
+        </header>
+
+        <!-- 搜索栏 -->
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="搜索日记内容...">
+            <button id="searchBtn" class="btn-secondary">搜索</button>
+            <button id="clearSearchBtn" class="btn-secondary" style="display:none;">清除</button>
+            {% if diary_report_enabled %}
+            <button id="weeklyReportBtn" class="btn-secondary">📰 周报</button>
+            <button id="monthlyReportBtn" class="btn-secondary">📗 月报</button>
+            {% endif %}
+            {% if diary_ai_enabled %}
+            <button id="emotionChartBtn" class="btn-secondary">📊 情绪曲线</button>
+            {% endif %}
+        </div>
+
+        <!-- 情绪曲线图模态框 -->
+        <div id="emotionChartModal" class="modal" style="display:none;">
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2>📊 情绪趋势</h2>
+                    <button class="modal-close" onclick="document.getElementById('emotionChartModal').style.display='none'">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="emotion-chart-controls">
+                        <strong>时间范围</strong>
+                        <select id="historyEmotionRange" class="time-input">
+                            <option value="14">最近 14 天</option>
+                            <option value="30" selected>最近 30 天</option>
+                            <option value="90">最近 90 天</option>
+                        </select>
+                    </div>
+                    <div class="emotion-chart-wrap">
+                        <canvas id="emotionChart"></canvas>
+                    </div>
+                    <p class="emotion-chart-hint">纵轴越高代表情绪越积极，日期刻度已自动精简，点开可看具体日期。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 报告模态框 -->
+        <div id="reportModal" class="modal" style="display:none;">
+            <div class="modal-content report-modal" style="max-width: 900px;">
+                <div class="modal-header">
+                    <h2 id="reportTitle">📰 报告</h2>
+                    <button class="modal-close" onclick="document.getElementById('reportModal').style.display='none'">×</button>
+                </div>
+                <div class="modal-body diary-content" id="reportContent">
+                    <div class="loading">生成中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 日记列表 -->
+        <main class="history-container">
+            <div id="diaryList" class="diary-list">
+                <div class="loading">加载中...</div>
+            </div>
+
+            <!-- 分页 -->
+            <div class="pagination" id="pagination"></div>
+        </main>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentSearch = '';
+
+        // 加载日记列表
+        async function loadDiaries(page = 1, search = '') {
+            const listDiv = document.getElementById('diaryList');
+            listDiv.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                let url = `/api/diary/list?page=${page}`;
+                if (search) {
+                    // 搜索功能：通过查询API实现
+                    url = `/api/diary/search?keyword=${encodeURIComponent(search)}&page=${page}`;
+                }
+
+                const res = await fetch(url);
+                const data = await res.json();
+
+                currentPage = data.current_page || 1;
+                totalPages = data.pages || 1;
+
+                if (data.diaries && data.diaries.length === 0 || (!data.diaries && !data.results)) {
+                    listDiv.innerHTML = '<div class="empty">' + (search ? '没有找到匹配的日记' : '还没有日记，去写第一篇吧！') + '</div>';
+                    return;
+                }
+
+                const diaries = data.diaries || data.results || [];
+
+                listDiv.innerHTML = diaries.map(diary => `
+                    <div class="diary-card" data-id="${diary.id}">
+                        <div class="diary-header">
+                            <span class="diary-date">📅 ${diary.date}</span>
+                            <span class="diary-time">${formatTime(diary.created_at)}</span>
+                        </div>
+                        <div class="diary-content">
+                            ${formatPreview(diary.content)}
+                        </div>
+                        ${diary.analysis ? `<div style="margin-top:8px;font-size:12px;color:var(--text-secondary);">
+                            ${diary.analysis.emotion ? `<span class="emotion-badge emotion-${diary.analysis.emotion === 'positive' ? 'positive' : diary.analysis.emotion === 'negative' ? 'negative' : 'neutral'}">${diary.analysis.emotion === 'positive' ? '😊 积极' : diary.analysis.emotion === 'negative' ? '😟 消极' : '😐 平静'}</span>` : ''}
+                            ${diary.analysis.keywords && diary.analysis.keywords.length > 0 ? diary.analysis.keywords.slice(0, 3).map(k => `<span class="keyword-tag">${k}</span>`).join('') : ''}
+                        </div>` : ''}
+                        <div class="diary-actions">
+                            <button class="btn-view" data-id="${diary.id}">查看详情</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                // 绑定查看详情事件
+                document.querySelectorAll('.btn-view').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.dataset.id;
+                        viewDiaryDetail(id);
+                    });
+                });
+
+                // 更新分页
+                updatePagination();
+
+            } catch (err) {
+                console.error(err);
+                listDiv.innerHTML = '<div class="error">加载失败，请重试</div>';
+            }
+        }
+
+        // 格式化时间
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            const date = new Date(timeStr);
+            return date.toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        // 格式化预览
+        function formatPreview(content) {
+            // 移除markdown符号，提取纯文本预览
+            let preview = content
+                .replace(/#{1,6}\s/g, '')
+                .replace(/\*\*/g, '')
+                .replace(/\*/g, '')
+                .replace(/```[\s\S]*?```/g, '[代码块]')
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                .replace(/\n/g, ' ');
+            return preview.substring(0, 250) + (preview.length > 250 ? '...' : '');
+        }
+
+        // 格式化日记内容为HTML
+        function formatDiaryContent(content) {
+            // 简单的markdown转HTML
+            let html = content
+                // 标题
+                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                // 粗体
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                // 斜体
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                // 代码块
+                .replace(/```(\w*)\n([\s\S]+?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+                // 行内代码
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                // 链接
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+                // 无序列表
+                .replace(/^\- (.+)$/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+                // 引用
+                .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+                // 换行
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+
+            return '<div class="diary-detail">' + html + '</div>';
+        }
+
+        // 查看日记详情
+        async function viewDiaryDetail(id) {
+            try {
+                const res = await fetch(`/api/diary/${id}`);
+                const data = await res.json();
+
+                if (res.ok) {
+                    const diary = data.diary;
+
+                    // 创建模态框
+                    const modal = document.createElement('div');
+                    modal.className = 'modal';
+                    modal.innerHTML = `
+                        <div class="modal-content diary-modal">
+                            <div class="modal-header">
+                                <h2>📅 ${diary.date}</h2>
+                                <button class="modal-close">×</button>
+                            </div>
+                            <div class="modal-body diary-content">
+                                ${formatDiaryContent(diary.content)}
+                                ${diary.analysis ? renderAnalysis(diary.analysis) : ''}
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+
+                    modal.querySelector('.modal-close').addEventListener('click', () => {
+                        modal.remove();
+                    });
+
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) modal.remove();
+                    });
+                }
+            } catch (err) {
+                alert('加载详情失败');
+            }
+        }
+
+        // 渲染分析结果
+        function renderAnalysis(analysis) {
+            let html = '<div class="analysis-section"><h3>📊 心理分析</h3>';
+
+            if (analysis.emotion) {
+                const emotionMap = {
+                    'positive': '😊 积极乐观',
+                    'neutral': '😐 平静温和',
+                    'negative': '😟 消极低落'
+                };
+                html += `<p><strong>情绪状态：</strong><span class="emotion-badge emotion-${analysis.emotion}">${emotionMap[analysis.emotion] || analysis.emotion}</span></p>`;
+            }
+
+            if (analysis.keywords && analysis.keywords.length > 0) {
+                html += `<p><strong>关键词：</strong>${analysis.keywords.map(k => `<span class="keyword-tag">${k}</span>`).join('')}</p>`;
+            }
+
+            if (analysis.full_analysis) {
+                html += `<div style="margin-top:12px;"><strong>详细分析：</strong><p style="white-space:pre-wrap;margin-top:8px;">${analysis.full_analysis.substring(0, 500)}${analysis.full_analysis.length > 500 ? '...' : ''}</p></div>`;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        // 更新分页
+        function updatePagination() {
+            const paginationDiv = document.getElementById('pagination');
+            if (totalPages <= 1) {
+                paginationDiv.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            if (currentPage > 1) {
+                html += `<button class="page-btn" data-page="${currentPage - 1}">上一页</button>`;
+            }
+            html += `<span class="page-info">第 ${currentPage} / ${totalPages} 页</span>`;
+            if (currentPage < totalPages) {
+                html += `<button class="page-btn" data-page="${currentPage + 1}">下一页</button>`;
+            }
+
+            paginationDiv.innerHTML = html;
+
+            // 绑定分页事件
+            document.querySelectorAll('.page-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    loadDiaries(parseInt(btn.dataset.page), currentSearch);
+                });
+            });
+        }
+
+        // 搜索功能
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            const keyword = document.getElementById('searchInput').value.trim();
+            currentSearch = keyword;
+            document.getElementById('clearSearchBtn').style.display = keyword ? 'inline-block' : 'none';
+            loadDiaries(1, keyword);
+        });
+
+        // 回车搜索
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('searchBtn').click();
+            }
+        });
+
+        // 清除搜索
+        document.getElementById('clearSearchBtn').addEventListener('click', () => {
+            document.getElementById('searchInput').value = '';
+            currentSearch = '';
+            document.getElementById('clearSearchBtn').style.display = 'none';
+            loadDiaries(1);
+        });
+
+        // 退出登录
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            if (confirm('确定要退出登录吗？')) {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login';
+            }
+        });
+
+        // 情绪曲线图
+        const emotionChartBtn = document.getElementById('emotionChartBtn');
+        if (emotionChartBtn) {
+            emotionChartBtn.addEventListener('click', showEmotionChart);
+        }
+
+        // 周报月报按钮
+        const weeklyReportBtn = document.getElementById('weeklyReportBtn');
+        const monthlyReportBtn = document.getElementById('monthlyReportBtn');
+
+        if (weeklyReportBtn) {
+            weeklyReportBtn.addEventListener('click', () => showReport('weekly'));
+        }
+
+        if (monthlyReportBtn) {
+            monthlyReportBtn.addEventListener('click', () => showReport('monthly'));
+        }
+
+        async function showReport(period) {
+            const modal = document.getElementById('reportModal');
+            const titleEl = document.getElementById('reportTitle');
+            const contentEl = document.getElementById('reportContent');
+
+            const title = period === 'weekly' ? '📰 周报' : '📗 月报';
+            titleEl.textContent = title;
+            contentEl.innerHTML = '<div class="loading">生成中...</div>';
+            modal.style.display = 'block';
+
+            try {
+                const res = await fetch(`/api/report/${period}`);
+                const data = await res.json();
+
+                if (res.ok) {
+                    // 使用marked.js渲染markdown
+                    if (typeof marked !== 'undefined') {
+                        contentEl.innerHTML = marked.parse(data.report);
+                    } else {
+                        contentEl.innerHTML = `<pre>${data.report}</pre>`;
+                    }
+                } else {
+                    contentEl.innerHTML = `<div class="error">${data.error}</div>`;
+                }
+            } catch (err) {
+                console.error('生成报告失败', err);
+                contentEl.innerHTML = '<div class="error">生成失败，请重试</div>';
+            }
+        }
+
+        // 点击报告模态框外部关闭
+        document.getElementById('reportModal').addEventListener('click', (e) => {
+            if (e.target.id === 'reportModal') {
+                e.target.style.display = 'none';
+            }
+        });
+
+        let emotionChartInstance = null;
+
+        async function showEmotionChart() {
+            const modal = document.getElementById('emotionChartModal');
+            modal.style.display = 'block';
+
+            try {
+                const range = document.getElementById('historyEmotionRange')?.value || 30;
+                const res = await fetch(`/api/emotion/data?days=${range}`);
+                const data = await res.json();
+
+                if (res.ok && data.data && data.data.length > 0) {
+                    renderEmotionChart(data.data);
+                } else {
+                    alert('暂无情绪数据');
+                }
+            } catch (err) {
+                console.error('加载情绪数据失败', err);
+                alert('加载失败，请重试');
+            }
+        }
+
+        function renderEmotionChart(data) {
+            const ctx = document.getElementById('emotionChart').getContext('2d');
+
+            // 销毁旧图表
+            if (emotionChartInstance) {
+                emotionChartInstance.destroy();
+            }
+
+            // 准备数据
+            const labels = data.map(d => d.date.slice(5));
+            const emotions = data.map(d => {
+                // 将情绪转换为数值
+                const emotionMap = { 'positive': 1, 'neutral': 0, 'negative': -1 };
+                return emotionMap[d.emotion] || 0;
+            });
+            const pointColors = data.map(d => {
+                if (d.emotion === 'positive') return '#6B9688';
+                if (d.emotion === 'negative') return '#C47A6E';
+                return '#8F867B';
+            });
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+            emotionChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '情绪',
+                        data: emotions,
+                        borderColor: '#5567d8',
+                        backgroundColor: 'rgba(85, 103, 216, 0.08)',
+                        pointBackgroundColor: pointColors,
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: isMobile ? 3 : 4,
+                        pointHoverRadius: 6,
+                        tension: 0.28,
+                        fill: true,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 6,
+                            right: 10,
+                            bottom: 4,
+                            left: 0
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: isMobile ? 5 : 8,
+                                maxRotation: 0,
+                                minRotation: 0,
+                                font: {
+                                    size: isMobile ? 11 : 12
+                                }
+                            }
+                        },
+                        y: {
+                            min: -1.15,
+                            max: 1.15,
+                            grid: {
+                                color: 'rgba(148, 163, 184, 0.28)'
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    if (value === 1) return '积极';
+                                    if (value === 0) return '平静';
+                                    if (value === -1) return '消极';
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    return data[index]?.date || context[0].label;
+                                },
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const emotionMap = { 1: '积极', 0: '平静', '-1': '消极' };
+                                    return '情绪: ' + (emotionMap[value] || '未知');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.getElementById('historyEmotionRange')?.addEventListener('change', showEmotionChart);
+
+        // 点击模态框外部关闭
+        document.getElementById('emotionChartModal').addEventListener('click', (e) => {
+            if (e.target.id === 'emotionChartModal') {
+                e.target.style.display = 'none';
+            }
+        });
+
+        // 初始加载
+        loadDiaries(1);
+    </script>
+</body>
+</html>

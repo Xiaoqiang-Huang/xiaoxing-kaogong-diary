@@ -1,0 +1,2678 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小星日记</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>">
+
+    <script>
+        (function() {
+            document.documentElement.classList.add('app-booting');
+            try {
+                if (localStorage.getItem('darkMode') === 'true') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (e) {}
+            window.addEventListener('DOMContentLoaded', function() {
+                document.documentElement.classList.remove('app-booting');
+                document.documentElement.classList.add('app-ready');
+            });
+            setTimeout(function() {
+                document.documentElement.classList.remove('app-booting');
+                document.documentElement.classList.add('app-ready');
+            }, 2000);
+        })();
+    </script>
+    <style>
+        html.app-booting body {
+            visibility: hidden;
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/style.css?v=20260508-collapse-visible">
+    <link rel="preload" href="/static/js/voice-utils.js?v=20260508-collapse-visible" as="script">
+    <link rel="preload" href="/static/js/app.js?v=20260508-collapse-visible" as="script">
+    <style>
+        /* 模式切换样式 */
+        .mode-switcher {
+            display: flex;
+            background: var(--bg-color);
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .mode-btn:hover:not(.active) {
+            background: var(--border-color);
+        }
+
+        /* 对话模式样式 */
+        .query-mode .input-container {
+            border-top: 3px solid #f59e0b;
+        }
+
+        .query-mode .btn-send {
+            background: #f59e0b;
+        }
+
+        .query-mode .btn-send:hover {
+            background: #d97706;
+        }
+
+        /* 输入框上方工具栏 - 两行布局 */
+        .input-toolbar {
+            display: flex;
+            flex-direction: column;
+            padding: 8px 12px;
+            background: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            gap: 8px;
+        }
+
+        .input-toolbar .toolbar-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .input-toolbar .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .input-toolbar .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-toolbar .toolbar-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .input-toolbar .modeHint {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .input-toolbar .toolbar-btn {
+            padding: 5px 10px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .input-toolbar .toolbar-btn:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .input-toolbar .toolbar-btn.danger {
+            color: var(--error-color);
+            border-color: #fca5a5;
+        }
+
+        .input-toolbar .toolbar-btn.danger:hover {
+            background: #fee2e2;
+        }
+
+        /* 风格选择器样式 */
+        .style-selector {
+            position: relative;
+            display: none; /* 默认隐藏，日记模式显示 */
+        }
+
+        .diary-mode .style-selector {
+            display: block;
+        }
+
+        .style-btn {
+            padding: 6px 12px;
+            background: #f3f4f6;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .style-btn:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .style-btn::after {
+            content: '▼';
+            font-size: 10px;
+            margin-left: 4px;
+        }
+
+        .style-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 4px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            min-width: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .style-option {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.15s;
+        }
+
+        .style-option:last-child {
+            border-bottom: none;
+        }
+
+        .style-option:hover {
+            background: #f3f4f6;
+        }
+
+        .style-option.active {
+            background: #e0e7ff;
+            color: #4338ca;
+            font-weight: 500;
+        }
+
+        /* 查询模式也允许选择回复风格 */
+        .query-mode .style-selector {
+            display: block !important;
+        }
+
+        /* 夜间模式样式 */
+        .dark-mode {
+            --bg-color: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #eaeaea;
+            --text-secondary: #a0a0a0;
+            --border-color: #2a2a4a;
+            --primary-color: #7c4dff;
+            --input-bg: #0f0f1a;
+        }
+
+        .dark-mode body {
+            background: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        .dark-mode .app-container {
+            background: var(--bg-color);
+        }
+
+        .dark-mode .header {
+            background: var(--bg-secondary);
+            border-bottom-color: var(--border-color);
+        }
+
+        .dark-mode .messages {
+            background: var(--bg-color);
+        }
+
+        .dark-mode .input-container {
+            background: var(--bg-secondary);
+            border-top-color: var(--border-color);
+        }
+
+        .dark-mode .input-toolbar {
+            background: var(--bg-secondary);
+            border-bottom-color: var(--border-color);
+        }
+
+        .dark-mode textarea,
+        .dark-mode input[type="text"] {
+            background: var(--input-bg);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .dark-mode .message.user {
+            background: rgba(124, 77, 255, 0.15);
+        }
+
+        .dark-mode .message.assistant {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dark-mode .btn-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .dark-mode .btn-icon:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .dark-mode .modal-content {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .dark-mode .diary-card {
+            background: var(--bg-secondary);
+            border-color: var(--border-color);
+        }
+
+        /* Markdown样式 */
+        .message-content h1,
+        .message-content h2,
+        .message-content h3,
+        .message-content h4 {
+            margin-top: 16px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .message-content h1 { font-size: 1.5em; }
+        .message-content h2 { font-size: 1.3em; }
+        .message-content h3 { font-size: 1.1em; }
+
+        .message-content p {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .message-content ul,
+        .message-content ol {
+            margin-left: 24px;
+            margin-bottom: 12px;
+        }
+
+        .message-content li {
+            margin-bottom: 4px;
+        }
+
+        .message-content code {
+            background: rgba(0,0,0,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+
+        .dark-mode .message-content code {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .message-content pre {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 12px;
+        }
+
+        .dark-mode .message-content pre {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .message-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .message-content blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 16px;
+            margin: 12px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .message-content strong {
+            font-weight: 600;
+        }
+
+        .message-content em {
+            font-style: italic;
+        }
+
+        .message-content a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .message-content a:hover {
+            text-decoration: underline;
+        }
+
+        .message-content hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 16px 0;
+        }
+
+        .message-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .message-content th,
+        .message-content td {
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .message-content th {
+            background: rgba(0,0,0,0.03);
+            font-weight: 600;
+        }
+
+        .dark-mode .message-content th {
+            background: rgba(255,255,255,0.05);
+        }
+
+        /* 消息中的图片 */
+        .message-content img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .message-content img:hover {
+            transform: scale(1.02);
+        }
+
+        /* 图片预览区域 */
+        .image-preview {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 8px 0;
+        }
+
+        .image-preview-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .image-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-preview-item .remove-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    {% set feature_flags = features or {} %}
+    {% set kaogong_enabled = feature_flags.get('kaogong', {}).get('enabled', True) %}
+    {% set diary_features = feature_flags.get('diary', {}).get('features', {}) %}
+    {% set diary_voice_enabled = feature_flags.get('diary', {}).get('enabled', True) and diary_features.get('voice_input', True) %}
+    {% set diary_report_enabled = feature_flags.get('diary', {}).get('enabled', True) and diary_features.get('daily_report', True) %}
+    {% set four_sages_enabled = feature_flags.get('diary', {}).get('enabled', True) and diary_features.get('four_sages', True) %}
+    <div class="app-container">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="header-left">
+                <h1>📔 小星日记</h1>
+            </div>
+            <div class="header-right">
+                <button id="darkModeToggle" class="btn-icon" title="切换夜间模式">
+                    🌙
+                </button>
+                <span class="username">{{ username }}</span>
+                <a href="/history" class="btn-secondary">历史日记</a>
+                {% if kaogong_enabled %}
+                <a href="/kaogong" class="btn-secondary" style="background:var(--primary-light);color:var(--primary);">📚 考公复盘</a>
+                {% endif %}
+                <a href="/settings" class="btn-icon" title="设置">⚙️</a>
+                <button id="logoutBtn" class="btn-logout">退出</button>
+            </div>
+        </header>
+        <nav class="mobile-main-nav" aria-label="移动端主导航">
+            <a href="/history">历史日记</a>
+            {% if kaogong_enabled %}
+            <a href="/kaogong">考公复盘</a>
+            {% endif %}
+            <a href="/settings">设置</a>
+        </nav>
+
+        <!-- 主对话区域 -->
+        <main class="chat-container">
+            <!-- 消息区域 -->
+            <div id="messages" class="messages"></div>
+
+            <!-- 输入区域 -->
+            <div class="input-container">
+                <button type="button" class="input-expand-ball" id="inputExpandBall" aria-label="展开输入区" title="展开输入区">
+                    写
+                </button>
+                <!-- 模式切换和工具栏 - 两行布局 -->
+                <div class="input-toolbar">
+                    <!-- 第一行：模式切换和风格选择 -->
+                    <div class="toolbar-row">
+                        <div class="toolbar-left">
+                            <!-- 模式切换 -->
+                            <div class="mode-switcher">
+                                <button class="mode-btn active" data-mode="diary">
+                                    📝 日记
+                                </button>
+                                <button class="mode-btn" data-mode="query">
+                                    🔍 查询
+                                </button>
+                            </div>
+                            <!-- 风格选择器（仅日记模式显示） -->
+                            {% if four_sages_enabled %}
+                            <div class="style-selector" id="styleSelector">
+                                <button class="style-btn" id="styleBtn" title="选择回复风格">
+                                    🎯 四圣谏言
+                                </button>
+                                <div class="style-dropdown" id="styleDropdown" style="display:none;">
+                                    <div class="style-option" data-style="four_sages" data-name="四圣谏言">🎯 四圣谏言</div>
+                                    <div class="style-option" data-style="zeng" data-name="曾国藩">📜 曾国藩 - 修身省察</div>
+                                    <div class="style-option" data-style="munger" data-name="芒格">🧠 芒格 - 逆向思维</div>
+                                    <div class="style-option" data-style="buffett" data-name="巴菲特">💰 巴菲特 - 长期主义</div>
+                                    <div class="style-option" data-style="karpathy" data-name="Karpathy">⚙️ Karpathy - 工程实践</div>
+                                    <div class="style-option" data-style="gentle" data-name="温柔陪伴">🌸 温柔陪伴 - 纯粹温暖</div>
+                                    <div class="style-option" data-style="mengmei" data-name="温柔萌妹">🍬 温柔萌妹 - 鼓励陪伴</div>
+                                    <div class="style-option" data-style="maozedong" data-name="实事求是">⭐ 实事求是 - 抓主要矛盾</div>
+                                    <div class="style-option" data-style="sharp" data-name="犀利提问">⚡ 犀利提问 - 深度追问</div>
+                                    <div class="style-option" data-style="custom" data-name="自定义">✍️ 自定义 - 按你的描述回复</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <span id="modeHint">记录今天的想法</span>
+                        <button type="button" class="toolbar-btn input-collapse-btn" id="collapseInputBtn" title="收起输入区为右下角悬浮按钮" aria-label="收起输入区为右下角悬浮按钮">
+                            <span class="btn-icon">↓</span>
+                            <span class="btn-label">收起输入</span>
+                        </button>
+                    </div>
+                    <!-- 第二行：功能按钮 -->
+                    <div class="toolbar-row">
+                        <div class="toolbar-center">
+                            <button class="toolbar-btn" id="backgroundBtn" title="对话背景">
+                                <span class="btn-icon">🎨</span>
+                                <span class="btn-label">背景</span>
+                            </button>
+                            <button class="toolbar-btn" id="calendarBtn" title="日历视图">
+                                <span class="btn-icon">📅</span>
+                                <span class="btn-label">日历</span>
+                            </button>
+                            <button class="toolbar-btn" id="emotionBtn" title="情绪趋势">
+                                <span class="btn-icon">📈</span>
+                                <span class="btn-label">情绪</span>
+                            </button>
+                            {% if diary_report_enabled %}
+                            <button class="toolbar-btn" id="reportBtn" title="每日日报">
+                                <span class="btn-icon">📊</span>
+                                <span class="btn-label">日报</span>
+                            </button>
+                            {% endif %}
+                            <button class="toolbar-btn" id="todaySummaryBtn" title="总结今天全部记录">
+                                <span class="btn-icon">🧭</span>
+                                <span class="btn-label">总结</span>
+                            </button>
+                            <button class="toolbar-btn danger" id="clearChatBtn" title="清空当前对话">
+                                <span class="btn-icon">🗑️</span>
+                                <span class="btn-label">清空</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="chatForm" class="chat-form">
+                    <textarea
+                        id="userInput"
+                        placeholder="写下今天的想法... (Enter发送，Shift+Enter换行)"
+                        rows="2"
+                    ></textarea>
+                    <div class="input-actions">
+                        <input type="file" id="imageInput" accept="image/*" style="display:none;">
+                        <button type="button" class="btn-template" id="imageBtn" title="插入图片">
+                            🖼️ 图片
+                        </button>
+                        {% if diary_voice_enabled %}
+                        <button type="button" class="btn-template voice-input-btn" id="serverVoiceBtn" title="录音并用服务器端语音模型转文字">
+                            🎙️ 语音
+                        </button>
+                        {% endif %}
+                        <button type="button" class="btn-template" id="templateBtn" title="使用模板">
+                            📋 模板
+                        </button>
+                        <button type="submit" class="btn-send" id="sendBtn">
+                            <span class="btn-text">发送</span>
+                            <span class="btn-loading">发送中...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- 日报配置对话框 -->
+    <div id="reportModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 每日日报配置</h2>
+                <button class="modal-close" id="closeReportModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="report-config-section">
+                    <h3>推送状态</h3>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="reportEnabled" checked>
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">启用日报推送</span>
+                    </label>
+                </div>
+
+                <div class="report-config-section">
+                    <h3>推送时间</h3>
+                    <input type="time" id="reportPushTime" value="08:00" class="time-input">
+                </div>
+
+                <div class="report-config-section">
+                    <h3>话题列表</h3>
+                    <p class="hint">选择你想在日报中看到的内容</p>
+                    <div id="topicList" class="topic-list">
+                        <label class="topic-checkbox">
+                            <input type="checkbox" value="今日天气与提醒" checked>
+                            <span>🌤️ 今日天气与提醒</span>
+                        </label>
+                        <label class="topic-checkbox">
+                            <input type="checkbox" value="行业动态与新闻" checked>
+                            <span>📰 行业动态与新闻</span>
+                        </label>
+                        <label class="topic-checkbox">
+                            <input type="checkbox" value="个人成长建议" checked>
+                            <span>🌱 个人成长建议</span>
+                        </label>
+                        <label class="topic-checkbox">
+                            <input type="checkbox" value="健康生活提示" checked>
+                            <span>💪 健康生活提示</span>
+                        </label>
+                        <label class="topic-checkbox">
+                            <input type="checkbox" value="今日推荐阅读" checked>
+                            <span>📖 今日推荐阅读</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="report-config-section">
+                    <h3>自定义话题</h3>
+                    <p class="hint">添加你想在日报中包含的自定义话题</p>
+                    <div id="customTopicList" class="custom-topic-list">
+                        <!-- 自定义话题将动态添加到这里 -->
+                    </div>
+                    <div class="custom-topic-input">
+                        <input type="text" id="customTopicInput" class="custom-topic-input-field" placeholder="输入自定义话题名称...">
+                        <button id="addCustomTopicBtn" class="btn-add-topic">添加</button>
+                    </div>
+                </div>
+
+                <div class="report-config-section">
+                    <h3>历史报告</h3>
+                    <button id="viewHistoryBtn" class="btn-secondary">查看历史报告</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveReportConfig" class="btn-primary">保存配置</button>
+                <button id="generateNowBtn" class="btn-secondary">立即生成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 报告预览对话框 -->
+    <div id="reportPreviewModal" class="modal" style="display:none;">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>📊 日报预览</h2>
+                <button class="modal-close" id="closePreviewModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="reportPreviewContent" class="report-preview"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="copyReportBtn" class="btn-secondary">复制内容</button>
+                <button id="closePreviewBtn" class="btn-primary">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史报告对话框 -->
+    <div id="reportHistoryModal" class="modal" style="display:none;">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>📋 历史日报</h2>
+                <button class="modal-close" id="closeHistoryModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="reportHistoryLoading" style="text-align:center;padding:20px;display:none;">
+                    <span class="loading-dot"></span> 加载中...
+                </div>
+                <div id="reportHistoryList" class="report-history-list"></div>
+                <div id="reportHistoryEmpty" style="text-align:center;padding:40px;display:none;">
+                    <p>暂无历史报告</p>
+                    <button class="btn-secondary" onclick="document.getElementById('reportHistoryModal').style.display='none';document.getElementById('reportBtn').click();">生成第一份日报</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="closeHistoryBtn" class="btn-primary">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 背景设置对话框 -->
+    <div id="backgroundModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🎨 对话背景设置</h2>
+                <button class="modal-close" id="closeBackgroundModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="report-config-section">
+                    <h3>当前背景</h3>
+                    <div id="currentBackgroundPreview" style="width: 100%; height: 150px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 13px;">
+                        暂无自定义背景
+                    </div>
+                </div>
+
+                <div class="report-config-section">
+                    <h3>上传新背景</h3>
+                    <p class="hint">支持 JPG、PNG、WEBP，最大 24MB；上传前会自动压缩，避免移动端加载过慢。</p>
+                    <input type="file" id="backgroundInput" accept="image/*" style="display: none;">
+                    <button id="selectBackgroundBtn" class="btn-secondary" style="width: 100%; padding: 12px; border: 2px dashed var(--border); text-align: center;">
+                        📁 点击选择图片
+                    </button>
+                </div>
+
+                <div class="report-config-section">
+                    <h3>预设背景</h3>
+                    <div id="presetBackgrounds" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                        <div class="preset-bg-item" data-color="#F5EFE4" style="background: #F5EFE4; height: 60px; border-radius: 6px; cursor: pointer; border: 2px solid transparent;" title="宣纸米白"></div>
+                        <div class="preset-bg-item" data-color="#E8F4F0" style="background: #E8F4F0; height: 60px; border-radius: 6px; cursor: pointer; border: 2px solid transparent;" title="淡青"></div>
+                        <div class="preset-bg-item" data-color="#FDF2E9" style="background: #FDF2E9; height: 60px; border-radius: 6px; cursor: pointer; border: 2px solid transparent;" title="暖杏"></div>
+                        <div class="preset-bg-item" data-color="#EFE8F4" style="background: #EFE8F4; height: 60px; border-radius: 6px; cursor: pointer; border: 2px solid transparent;" title="浅紫"></div>
+                        <div class="preset-bg-item" data-color="#F4F4EF" style="background: #F4F4EF; height: 60px; border-radius: 6px; cursor: pointer; border: 2px solid transparent;" title="灰绿"></div>
+                        <div class="preset-bg-item" data-color="#1a1815" style="background: #1a1815; height: 60px; border-radius: 6px; cursor: pointer; border: 2px solid transparent;" title="深夜"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="removeBackgroundBtn" class="btn-secondary" style="color: var(--coral);">移除背景</button>
+                <button id="closeBackgroundBtn" class="btn-primary">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 日历视图对话框 -->
+    <div id="calendarModal" class="modal" style="display:none;">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>📅 日历视图</h2>
+                <button class="modal-close" id="closeCalendarModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <button id="prevMonthBtn" class="btn-secondary">◀ 上月</button>
+                    <h3 id="calendarTitle" style="margin: 0; font-size: 18px;"></h3>
+                    <button id="nextMonthBtn" class="btn-secondary">下月 ▶</button>
+                </div>
+                <div id="calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
+                    <div class="calendar-header">日</div>
+                    <div class="calendar-header">一</div>
+                    <div class="calendar-header">二</div>
+                    <div class="calendar-header">三</div>
+                    <div class="calendar-header">四</div>
+                    <div class="calendar-header">五</div>
+                    <div class="calendar-header">六</div>
+                </div>
+                <div id="selectedDiaryContent" style="margin-top: 20px; padding: 16px; background: var(--bg); border-radius: 8px; display: none;">
+                    <h4 id="selectedDiaryDate" style="margin-bottom: 8px;"></h4>
+                    <div id="selectedDiaryText" style="white-space: pre-wrap; font-size: 14px; line-height: 1.7;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="closeCalendarBtn" class="btn-primary">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 情绪趋势对话框 -->
+    <div id="emotionModal" class="modal" style="display:none;">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>📈 情绪趋势</h2>
+                <button class="modal-close" id="closeEmotionModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="report-config-section">
+                    <h3>时间范围</h3>
+                    <select id="emotionRange" class="time-input" style="margin-bottom: 16px;">
+                        <option value="7">最近 7 天</option>
+                        <option value="14">最近 14 天</option>
+                        <option value="30" selected>最近 30 天</option>
+                        <option value="90">最近 90 天</option>
+                    </select>
+                </div>
+                <div id="emotionChart" style="min-height: 250px; position: relative;">
+                    <div style="text-align: center; color: var(--text-muted); padding: 40px;">加载中...</div>
+                </div>
+                <div id="emotionStats" style="margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                    <div class="emotion-stat positive" style="padding: 12px; background: rgba(74, 107, 74, 0.1); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: 600;" id="positiveCount">-</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">积极</div>
+                    </div>
+                    <div class="emotion-stat neutral" style="padding: 12px; background: rgba(107, 97, 88, 0.1); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: 600;" id="neutralCount">-</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">中性</div>
+                    </div>
+                    <div class="emotion-stat negative" style="padding: 12px; background: rgba(139, 44, 31, 0.1); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: 600;" id="negativeCount">-</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">消极</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="closeEmotionBtn" class="btn-primary">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/static/js/voice-utils.js?v=20260508-collapse-visible"></script>
+    <script src="/static/js/app.js?v=20260508-collapse-visible"></script>
+    <script src="/static/js/template.js"></script>
+    <script>
+    window.enabledFeatures = {{ feature_flags|tojson }};
+    // 等待DOM加载完成
+    document.addEventListener('DOMContentLoaded', function() {
+        // 当前模式
+        let currentMode = 'diary'; // 'diary' 或 'query'
+
+        // 夜间模式
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        let isDarkMode = localStorage.getItem('darkMode') === 'true';
+
+        function applyDarkMode() {
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark-mode');
+                darkModeToggle.textContent = '☀️';
+            } else {
+                document.documentElement.classList.remove('dark-mode');
+                darkModeToggle.textContent = '🌙';
+            }
+        }
+
+        // 初始化夜间模式
+        applyDarkMode();
+
+        // 切换夜间模式
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('click', () => {
+                isDarkMode = !isDarkMode;
+                localStorage.setItem('darkMode', isDarkMode);
+                applyDarkMode();
+            });
+        }
+
+        // DOM元素
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('userInput');
+        const modeHint = document.getElementById('modeHint');
+
+        // 用户名（从服务器传递）
+        const username = {{ username|tojson }};
+        const userDisplayName = (username && username.trim()) ? username.trim() : '朋友';
+        const safeUserDisplayName = userDisplayName
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+
+        // 模式配置
+        const modeConfig = {
+            diary: {
+                placeholder: '写下今天的想法... (Enter发送，Shift+Enter换行)',
+                hint: '记录今天的想法',
+                welcomeHtml: `
+                    <div class="welcome-message">
+                        <h2>👋 ${safeUserDisplayName}，你好！</h2>
+                        <p>这是日记模式，我会引导你记录今天的想法。</p>
+                        <div class="quick-actions" id="quickActions">
+                            <button class="quick-action-btn" onclick="quickStart('今天发生了什么有趣的事？')">今天发生了什么？</button>
+                            <button class="quick-action-btn" onclick="quickStart('今天学习/工作进展如何？')">进展汇报</button>
+                            <button class="quick-action-btn" onclick="quickStart('今天有什么特别的感受？')">心情记录</button>
+                            <button class="quick-action-btn" onclick="quickStart('使用四圣谏言模板')">四圣谏言</button>
+                        </div>
+                        <div id="topicRecommendations" style="margin-top: 16px;">
+                            <p style="color: var(--text-muted); font-size: 13px;">💡 话题推荐 加载中...</p>
+                        </div>
+                    </div>
+                `
+            },
+            query: {
+                placeholder: '问任何关于你过去的问题... (Enter发送)',
+                hint: '查询历史日记',
+                welcomeHtml: `
+                    <div class="welcome-message">
+                        <h2>🔍 ${safeUserDisplayName}，进入对话查询模式</h2>
+                        <p>我可以帮你从历史日记中查找信息。</p>
+                        <p style="margin-top: 12px; color: var(--text-muted);">试试问我：</p>
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" onclick="quickStart('最近一个月我做了哪些事情？')">最近一个月总结</button>
+                            <button class="quick-action-btn" onclick="quickStart('从日记内容分析一下我的个人情况')">我的个人画像</button>
+                            <button class="quick-action-btn" onclick="quickStart('我对科研的态度有什么变化？')">态度变化分析</button>
+                            <button class="quick-action-btn" onclick="quickStart('关于Bftpd的记录')">关键词搜索</button>
+                        </div>
+                    </div>
+                `
+            }
+        };
+
+        // 快速开始 - 放到全局作用域
+        window.quickStart = function(text) {
+            userInput.value = text;
+            userInput.focus();
+        };
+
+        // 风格配置
+        const styleConfig = {
+            four_sages: { icon: '🎯', name: '四圣谏言' },
+            zeng: { icon: '📜', name: '曾国藩' },
+            munger: { icon: '🧠', name: '芒格' },
+            buffett: { icon: '💰', name: '巴菲特' },
+            karpathy: { icon: '⚙️', name: 'Karpathy' },
+            gentle: { icon: '🌸', name: '温柔陪伴' },
+            mengmei: { icon: '🍬', name: '温柔萌妹' },
+            maozedong: { icon: '⭐', name: '实事求是' },
+            sharp: { icon: '⚡', name: '犀利提问' },
+            custom: { icon: '✍️', name: '自定义' }
+        };
+
+        // 当前选择的风格（从localStorage加载，默认四圣谏言）
+        let currentStyle = localStorage.getItem('diaryStyle') || 'four_sages';
+        if (window.enabledFeatures?.diary?.features?.four_sages === false && currentStyle === 'four_sages') {
+            currentStyle = 'gentle';
+        }
+        // 设为全局变量供app.js使用
+        window.currentStyle = currentStyle;
+        window.customStylePrompt = localStorage.getItem('customStylePrompt') || '';
+
+        // 更新风格按钮显示
+        function updateStyleButton() {
+            const styleBtn = document.getElementById('styleBtn');
+            if (styleBtn) {
+                const config = styleConfig[currentStyle] || styleConfig.four_sages;
+                styleBtn.textContent = `${config.icon} ${config.name}`;
+            }
+            // 更新下拉菜单中的选中状态
+            document.querySelectorAll('.style-option').forEach(opt => {
+                opt.classList.toggle('active', opt.dataset.style === currentStyle);
+            });
+        }
+
+        // 切换风格
+        function switchStyle(style) {
+            if (style === 'custom') {
+                const current = localStorage.getItem('customStylePrompt') || '像温柔但清醒的个人战略参谋，先讲事实，再鼓励，再给下一步。';
+                const next = prompt('写下你想要的AI回复风格：', current);
+                if (next === null) return;
+                localStorage.setItem('customStylePrompt', next.trim());
+                window.customStylePrompt = next.trim();
+            }
+            currentStyle = style;
+            window.currentStyle = style;  // 更新全局变量
+            localStorage.setItem('diaryStyle', style);
+            updateStyleButton();
+            // 隐藏下拉菜单
+            const dropdown = document.getElementById('styleDropdown');
+            if (dropdown) dropdown.style.display = 'none';
+        }
+
+        // 风格按钮点击 - 显示/隐藏下拉菜单
+        const styleBtn = document.getElementById('styleBtn');
+        const styleDropdown = document.getElementById('styleDropdown');
+        if (styleBtn && styleDropdown) {
+            styleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = styleDropdown.style.display !== 'none';
+                styleDropdown.style.display = isVisible ? 'none' : 'block';
+            });
+
+            // 点击外部关闭下拉菜单
+            document.addEventListener('click', () => {
+                styleDropdown.style.display = 'none';
+            });
+
+            // 阻止下拉菜单内部点击关闭
+            styleDropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+
+            // 风格选项点击
+            styleDropdown.querySelectorAll('.style-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    switchStyle(opt.dataset.style);
+                });
+            });
+        }
+
+        // 初始化风格按钮
+        updateStyleButton();
+
+        // 切换模式
+        function switchMode(mode) {
+            console.log('切换模式到:', mode);
+            currentMode = mode;
+            const config = modeConfig[mode];
+
+            // 更新按钮状态
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+
+            // 更新容器class
+            const container = document.querySelector('.chat-container');
+            if (container) {
+                container.classList.toggle('query-mode', mode === 'query');
+                container.classList.toggle('diary-mode', mode === 'diary');
+            }
+
+            // 更新提示
+            if (userInput) userInput.placeholder = config.placeholder;
+            if (modeHint) modeHint.textContent = config.hint;
+
+            // 更新发送按钮样式
+            const sendBtn = document.getElementById('sendBtn');
+            if (sendBtn) {
+                if (mode === 'query') {
+                    sendBtn.innerHTML = '<span class="btn-text">查询</span><span class="btn-loading">查询中...</span>';
+                } else {
+                    sendBtn.innerHTML = '<span class="btn-text">发送</span><span class="btn-loading">发送中...</span>';
+                }
+            }
+
+            // 如果消息区域为空或只有欢迎消息，显示新的欢迎消息
+            const hasContent = Array.from(messagesDiv.children).some(
+                msg => !msg.querySelector('.welcome-message')
+            );
+            if (!hasContent) {
+                showWelcomeMessage();
+                // 如果是日记模式，加载话题推荐
+                if (mode === 'diary') {
+                    loadTopicRecommendations();
+                }
+            }
+        }
+
+        // 显示欢迎消息
+        function showWelcomeMessage() {
+            messagesDiv.innerHTML = modeConfig[currentMode].welcomeHtml;
+        }
+
+        // 清理对话
+        async function clearChat() {
+            if (!confirm('确定要清理当前对话吗？这不会删除已保存的日记。')) return;
+
+            try {
+                const res = await fetch('/api/conversation/clear', { method: 'POST' });
+                if (res.ok) {
+                    messagesDiv.innerHTML = '';
+                    showWelcomeMessage();
+                }
+            } catch (err) {
+                console.error('清理失败', err);
+            }
+        }
+
+        // 只显示最近10条消息
+        function limitMessages() {
+            const allMessages = Array.from(messagesDiv.children);
+            const nonWelcomeMessages = allMessages.filter(m => !m.querySelector('.welcome-message'));
+
+            // 保留欢迎消息和最近10条
+            if (nonWelcomeMessages.length > 10) {
+                // 删除超出的消息
+                for (let i = 0; i < nonWelcomeMessages.length - 10; i++) {
+                    nonWelcomeMessages[i].remove();
+                }
+            }
+        }
+
+        // 加载对话历史（限制数量）
+        async function loadConversation() {
+            try {
+                const res = await fetch('/api/conversation?limit=10');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.messages && data.messages.length > 0) {
+                        messagesDiv.innerHTML = '';
+                        data.messages.forEach(msg => {
+                            // 使用 window.DiaryApp.appendMessage
+                            if (window.DiaryApp && window.DiaryApp.appendMessage) {
+                                window.DiaryApp.appendMessage(msg.role, msg.content, null, false);
+                            }
+                        });
+                        // 加载完成后滚动到底部，显示最新消息
+                        const scrollToLatest = window.DiaryApp && window.DiaryApp.scrollMessagesToBottom;
+                        if (scrollToLatest) {
+                            scrollToLatest(messagesDiv, messagesDiv.lastElementChild, { smooth: false });
+                        } else {
+                            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                            requestAnimationFrame(() => {
+                                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                            });
+                        }
+                    } else {
+                        showWelcomeMessage();
+                    }
+                } else {
+                    showWelcomeMessage();
+                }
+            } catch (err) {
+                console.error('加载历史失败', err);
+                showWelcomeMessage();
+            }
+        }
+
+        // 加载话题推荐
+        async function loadTopicRecommendations() {
+            const topicDiv = document.getElementById('topicRecommendations');
+            if (!topicDiv) return;
+
+            try {
+                const res = await fetch('/api/topics/recommendations');
+                const data = await res.json();
+
+                if (res.ok && data.recommendations && data.recommendations.length > 0) {
+                    topicDiv.innerHTML = `
+                        <p style="opacity: 0.8; font-size: 13px; margin-bottom: 8px;">💡 基于你最近的记录，推荐写写：</p>
+                        <div class="quick-actions">
+                            ${data.recommendations.map(rec =>
+                                `<button class="quick-action-btn" onclick="quickStart('${rec.replace(/'/g, "\\'")}')">${rec}</button>`
+                            ).join('')}
+                        </div>
+                    `;
+                } else {
+                    topicDiv.innerHTML = '';
+                }
+            } catch (err) {
+                console.error('加载话题推荐失败', err);
+                topicDiv.innerHTML = '';
+            }
+        }
+
+        // 模式切换事件 - 使用事件委托确保绑定成功
+        const modeSwitcher = document.querySelector('.mode-switcher');
+        if (modeSwitcher) {
+            modeSwitcher.addEventListener('click', (e) => {
+                const btn = e.target.closest('.mode-btn');
+                if (btn) {
+                    const mode = btn.dataset.mode;
+                    console.log('按钮点击:', mode);
+                    switchMode(mode);
+                }
+            });
+        }
+
+        // 清理对话按钮
+        const clearChatBtn = document.getElementById('clearChatBtn');
+        if (clearChatBtn) {
+            clearChatBtn.addEventListener('click', clearChat);
+        }
+
+        // 收起消息按钮
+        const limitMsgBtn = document.getElementById('limitMsgBtn');
+        if (limitMsgBtn) {
+            limitMsgBtn.addEventListener('click', limitMessages);
+        }
+
+        // 图片上传功能
+        const imageBtn = document.getElementById('imageBtn');
+        const imageInput = document.getElementById('imageInput');
+        let pendingImages = [];  // 待发送的图片
+
+        // ==================== 背景设置功能 ====================
+        const backgroundBtn = document.getElementById('backgroundBtn');
+        const backgroundModal = document.getElementById('backgroundModal');
+        const closeBackgroundModal = document.getElementById('closeBackgroundModal');
+        const closeBackgroundBtn = document.getElementById('closeBackgroundBtn');
+        const backgroundInput = document.getElementById('backgroundInput');
+        const selectBackgroundBtn = document.getElementById('selectBackgroundBtn');
+        const removeBackgroundBtn = document.getElementById('removeBackgroundBtn');
+        const currentBackgroundPreview = document.getElementById('currentBackgroundPreview');
+
+        // 打开背景设置对话框
+        if (backgroundBtn) {
+            backgroundBtn.addEventListener('click', async () => {
+                backgroundModal.style.display = '';
+                await loadCurrentBackground();
+            });
+        }
+
+        // 关闭背景设置对话框
+        if (closeBackgroundModal) {
+            closeBackgroundModal.addEventListener('click', () => {
+                backgroundModal.style.display = 'none';
+            });
+        }
+        if (closeBackgroundBtn) {
+            closeBackgroundBtn.addEventListener('click', () => {
+                backgroundModal.style.display = 'none';
+            });
+        }
+
+        // 点击对话框外部关闭
+        backgroundModal.addEventListener('click', (e) => {
+            if (e.target === backgroundModal) {
+                backgroundModal.style.display = 'none';
+            }
+        });
+
+        // 加载当前背景
+        async function loadCurrentBackground() {
+            try {
+                const res = await fetch('/api/user/background');
+                const data = await res.json();
+
+                // 清除之前的背景
+                currentBackgroundPreview.classList.remove('has-image');
+                currentBackgroundPreview.style.backgroundImage = '';
+                currentBackgroundPreview.style.backgroundColor = '';
+
+                if (data.background) {
+                    currentBackgroundPreview.style.backgroundImage = `url(${data.background})`;
+                    currentBackgroundPreview.classList.add('has-image');
+                    currentBackgroundPreview.textContent = '';
+                    applyChatBackground(data.background);
+                } else if (data.background_color) {
+                    currentBackgroundPreview.style.backgroundColor = data.background_color;
+                    currentBackgroundPreview.textContent = `纯色背景: ${data.background_color}`;
+                    applyChatBackgroundColor(data.background_color);
+                } else {
+                    currentBackgroundPreview.style.backgroundColor = 'var(--bg)';
+                    currentBackgroundPreview.textContent = '暂无自定义背景';
+                    removeChatBackground();
+                }
+
+                // 更新预设背景的选中状态
+                if (data.background_color) {
+                    document.querySelectorAll('.preset-bg-item').forEach(item => {
+                        item.classList.toggle('selected', item.dataset.color === data.background_color);
+                    });
+                }
+            } catch (err) {
+                console.error('加载背景失败', err);
+            }
+        }
+
+        // 应用背景图到对话容器
+        function applyChatBackground(url) {
+            const chatContainer = document.querySelector('.chat-container');
+            if (chatContainer) {
+                chatContainer.style.backgroundImage = `url(${url})`;
+                chatContainer.classList.add('has-background');
+            }
+        }
+
+        // 应用纯色背景到对话容器
+        function applyChatBackgroundColor(color) {
+            const chatContainer = document.querySelector('.chat-container');
+            if (chatContainer) {
+                chatContainer.style.backgroundImage = 'none';
+                chatContainer.style.backgroundColor = color;
+                chatContainer.classList.add('has-background');
+            }
+        }
+
+        // 移除自定义背景
+        function removeChatBackground() {
+            const chatContainer = document.querySelector('.chat-container');
+            if (chatContainer) {
+                chatContainer.style.backgroundImage = '';
+                chatContainer.style.backgroundColor = '';
+                chatContainer.classList.remove('has-background');
+            }
+        }
+
+        // 选择图片上传
+        if (selectBackgroundBtn && backgroundInput) {
+            selectBackgroundBtn.addEventListener('click', () => {
+                backgroundInput.click();
+            });
+
+            async function compressBackgroundImage(file) {
+                if (file.type === 'image/gif' || file.size < 900 * 1024) {
+                    return file;
+                }
+                const imageUrl = URL.createObjectURL(file);
+                try {
+                    const img = await new Promise((resolve, reject) => {
+                        const image = new Image();
+                        image.onload = () => resolve(image);
+                        image.onerror = reject;
+                        image.src = imageUrl;
+                    });
+                    const maxSide = 1800;
+                    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(img.width * scale));
+                    canvas.height = Math.max(1, Math.round(img.height * scale));
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+                    if (!blob) return file;
+                    const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+                    return new File([blob], name, { type: 'image/jpeg' });
+                } finally {
+                    URL.revokeObjectURL(imageUrl);
+                }
+            }
+
+            backgroundInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // 验证文件
+                if (!file.type.startsWith('image/')) {
+                    alert('请选择图片文件');
+                    return;
+                }
+                if (file.size > 24 * 1024 * 1024) {
+                    alert('图片大小不能超过 24MB');
+                    return;
+                }
+
+                try {
+                    selectBackgroundBtn.textContent = '压缩中...';
+                    const uploadFile = await compressBackgroundImage(file);
+                    const formData = new FormData();
+                    formData.append('background', uploadFile);
+
+                    selectBackgroundBtn.textContent = '上传中...';
+
+                    const res = await fetch('/api/upload/background', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        currentBackgroundPreview.style.backgroundImage = `url(${data.url})`;
+                        currentBackgroundPreview.classList.add('has-image');
+                        currentBackgroundPreview.textContent = '';
+                        applyChatBackground(data.url);
+                        showNotification('背景已更新', 'success');
+                    } else {
+                        const data = await res.json();
+                        alert(data.error || '上传失败');
+                    }
+                } catch (err) {
+                    console.error('上传失败', err);
+                    alert('上传失败');
+                } finally {
+                    selectBackgroundBtn.textContent = '📁 点击选择图片';
+                    backgroundInput.value = '';
+                }
+            });
+        }
+
+        // 移除背景
+        if (removeBackgroundBtn) {
+            removeBackgroundBtn.addEventListener('click', async () => {
+                if (!confirm('确定要移除自定义背景吗？')) return;
+
+                try {
+                    const res = await fetch('/api/user/background', { method: 'DELETE' });
+                    if (res.ok) {
+                        currentBackgroundPreview.style.backgroundImage = 'none';
+                        currentBackgroundPreview.style.backgroundColor = 'var(--bg)';
+                        currentBackgroundPreview.classList.remove('has-image');
+                        currentBackgroundPreview.textContent = '暂无自定义背景';
+                        removeChatBackground();
+                        showNotification('背景已移除', 'success');
+                    }
+                } catch (err) {
+                    console.error('移除背景失败', err);
+                }
+            });
+        }
+
+        // 预设背景点击
+        document.querySelectorAll('.preset-bg-item').forEach(item => {
+            item.addEventListener('click', async () => {
+                const color = item.dataset.color;
+                try {
+                    const res = await fetch('/api/user/background', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ color: color })
+                    });
+
+                    if (res.ok) {
+                        currentBackgroundPreview.style.backgroundImage = 'none';
+                        currentBackgroundPreview.style.backgroundColor = color;
+                        currentBackgroundPreview.classList.remove('has-image');
+                        currentBackgroundPreview.textContent = `纯色背景: ${color}`;
+                        applyChatBackgroundColor(color);
+
+                        // 更新选中状态
+                        document.querySelectorAll('.preset-bg-item').forEach(i => i.classList.remove('selected'));
+                        item.classList.add('selected');
+
+                        showNotification('背景已更新', 'success');
+                    }
+                } catch (err) {
+                    console.error('设置背景失败', err);
+                }
+            });
+        });
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 2000;
+                animation: slideIn 0.3s ease;
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+
+        // ==================== 背景设置功能结束 ====================
+
+        // ==================== 日历视图功能 ====================
+        const calendarBtn = document.getElementById('calendarBtn');
+        const calendarModal = document.getElementById('calendarModal');
+        const closeCalendarModal = document.getElementById('closeCalendarModal');
+        const closeCalendarBtn = document.getElementById('closeCalendarBtn');
+        const prevMonthBtn = document.getElementById('prevMonthBtn');
+        const nextMonthBtn = document.getElementById('nextMonthBtn');
+        const calendarTitle = document.getElementById('calendarTitle');
+        const calendarGrid = document.getElementById('calendarGrid');
+        const selectedDiaryContent = document.getElementById('selectedDiaryContent');
+
+        let currentCalendarDate = new Date();
+        let diaryMap = new Map(); // 日期到日记的映射
+
+        // 打开日历
+        if (calendarBtn) {
+            calendarBtn.addEventListener('click', async () => {
+                calendarModal.style.display = '';
+                await loadDiariesForCalendar();
+                renderCalendar();
+            });
+        }
+
+        // 关闭日历
+        if (closeCalendarModal) {
+            closeCalendarModal.addEventListener('click', () => calendarModal.style.display = 'none');
+        }
+        if (closeCalendarBtn) {
+            closeCalendarBtn.addEventListener('click', () => calendarModal.style.display = 'none');
+        }
+        calendarModal.addEventListener('click', (e) => {
+            if (e.target === calendarModal) calendarModal.style.display = 'none';
+        });
+
+        // 上一月
+        if (prevMonthBtn) {
+            prevMonthBtn.addEventListener('click', () => {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+                renderCalendar();
+            });
+        }
+
+        // 下一月
+        if (nextMonthBtn) {
+            nextMonthBtn.addEventListener('click', () => {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+                renderCalendar();
+            });
+        }
+
+        // 加载日记数据
+        async function loadDiariesForCalendar() {
+            try {
+                const res = await fetch('/api/diaries');
+                if (res.ok) {
+                    const data = await res.json();
+                    diaryMap.clear();
+                    data.diaries.forEach(diary => {
+                        diaryMap.set(diary.date, diary);
+                    });
+                }
+            } catch (err) {
+                console.error('加载日记失败', err);
+            }
+        }
+
+        // 渲染日历
+        function renderCalendar() {
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+
+            // 更新标题
+            calendarTitle.textContent = `${year}年 ${month + 1}月`;
+
+            // 清除旧的日期格子（保留头部）
+            const headers = calendarGrid.querySelectorAll('.calendar-header');
+            calendarGrid.innerHTML = '';
+            headers.forEach(h => calendarGrid.appendChild(h));
+
+            // 获取月份信息
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDayOfWeek = firstDay.getDay();
+            const daysInMonth = lastDay.getDate();
+
+            // 今天
+            const today = new Date();
+            const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+
+            // 上个月的日期填充
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
+            for (let i = startDayOfWeek - 1; i >= 0; i--) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day other-month';
+                dayDiv.textContent = prevMonthLastDay - i;
+                calendarGrid.appendChild(dayDiv);
+            }
+
+            // 当月日期
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+                if (isCurrentMonth && day === today.getDate()) {
+                    dayDiv.classList.add('today');
+                }
+
+                if (diaryMap.has(dateStr)) {
+                    dayDiv.classList.add('has-diary');
+                    dayDiv.addEventListener('click', () => showDiary(dateStr));
+                }
+
+                dayDiv.textContent = day;
+                calendarGrid.appendChild(dayDiv);
+            }
+
+            // 下个月的日期填充
+            const remainingCells = 42 - (startDayOfWeek + daysInMonth);
+            for (let i = 1; i <= remainingCells; i++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day other-month';
+                dayDiv.textContent = i;
+                calendarGrid.appendChild(dayDiv);
+            }
+        }
+
+        // 显示日记内容
+        function showDiary(dateStr) {
+            const diary = diaryMap.get(dateStr);
+            if (!diary) return;
+
+            document.getElementById('selectedDiaryDate').textContent = dateStr;
+            document.getElementById('selectedDiaryText').textContent = diary.content;
+            selectedDiaryContent.style.display = 'block';
+        }
+
+        // ==================== 日历视图功能结束 ====================
+
+        // ==================== 情绪趋势功能 ====================
+        const emotionBtn = document.getElementById('emotionBtn');
+        const emotionModal = document.getElementById('emotionModal');
+        const closeEmotionModal = document.getElementById('closeEmotionModal');
+        const closeEmotionBtn = document.getElementById('closeEmotionBtn');
+        const emotionRange = document.getElementById('emotionRange');
+        const emotionChart = document.getElementById('emotionChart');
+
+        // 打开情绪趋势
+        if (emotionBtn) {
+            emotionBtn.addEventListener('click', () => {
+                emotionModal.style.display = '';
+                loadEmotionData();
+            });
+        }
+
+        // 关闭情绪趋势
+        if (closeEmotionModal) {
+            closeEmotionModal.addEventListener('click', () => emotionModal.style.display = 'none');
+        }
+        if (closeEmotionBtn) {
+            closeEmotionBtn.addEventListener('click', () => emotionModal.style.display = 'none');
+        }
+        emotionModal.addEventListener('click', (e) => {
+            if (e.target === emotionModal) emotionModal.style.display = 'none';
+        });
+
+        // 切换时间范围
+        if (emotionRange) {
+            emotionRange.addEventListener('change', loadEmotionData);
+        }
+
+        // 加载情绪数据
+        async function loadEmotionData() {
+            const range = emotionRange ? emotionRange.value : 30;
+
+            try {
+                const res = await fetch(`/api/emotion/data?days=${range}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    renderEmotionChart(data.data || []);
+                }
+            } catch (err) {
+                console.error('加载情绪数据失败', err);
+                emotionChart.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;">加载失败</div>';
+            }
+        }
+
+        function emotionToPoint(emotion) {
+            return emotion === 'positive' ? 18 : emotion === 'negative' ? 82 : 50;
+        }
+
+        function emotionLabel(emotion) {
+            return emotion === 'positive' ? '积极' : emotion === 'negative' ? '消极' : '平静';
+        }
+
+        function emotionClass(emotion) {
+            return emotion === 'positive' ? 'positive' : emotion === 'negative' ? 'negative' : 'neutral';
+        }
+
+        function buildEmotionSummary(data) {
+            const latest = data[data.length - 1];
+            const previous = data[data.length - 2];
+            const negativeDays = data.filter(d => d.emotion === 'negative').length;
+            const positiveDays = data.filter(d => d.emotion === 'positive').length;
+
+            let trend = '整体平稳';
+            if (latest && previous) {
+                const delta = emotionToPoint(previous.emotion) - emotionToPoint(latest.emotion);
+                if (delta > 10) trend = '较前次上扬';
+                if (delta < -10) trend = '较前次下探';
+            }
+
+            return `
+                <div class="emotion-summary-card">
+                    <div>
+                        <span class="emotion-summary-label">最新状态</span>
+                        <strong class="${emotionClass(latest?.emotion)}">${emotionLabel(latest?.emotion)}</strong>
+                    </div>
+                    <div>
+                        <span class="emotion-summary-label">近期判断</span>
+                        <strong>${trend}</strong>
+                    </div>
+                    <div>
+                        <span class="emotion-summary-label">积极/消极</span>
+                        <strong>${positiveDays}/${negativeDays} 天</strong>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildEmotionSvg(data) {
+            const count = data.length;
+            const points = data.map((d, index) => {
+                const x = count === 1 ? 50 : 8 + (index / (count - 1)) * 84;
+                const y = emotionToPoint(d.emotion);
+                return { x, y, item: d };
+            });
+            const polyline = points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
+            const labelIndexes = count <= 6
+                ? data.map((_, i) => i)
+                : [0, Math.floor((count - 1) / 2), count - 1];
+
+            return `
+                <div class="emotion-timeline-card">
+                    <div class="emotion-axis-labels">
+                        <span>积极</span>
+                        <span>平静</span>
+                        <span>消极</span>
+                    </div>
+                    <svg class="emotion-line-chart" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="情绪趋势折线图">
+                        <line x1="8" y1="18" x2="92" y2="18" class="emotion-grid positive"></line>
+                        <line x1="8" y1="50" x2="92" y2="50" class="emotion-grid neutral"></line>
+                        <line x1="8" y1="82" x2="92" y2="82" class="emotion-grid negative"></line>
+                        <polyline points="${polyline}" class="emotion-polyline"></polyline>
+                        ${points.map(p => `
+                            <circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="2.4" class="emotion-point ${emotionClass(p.item.emotion)}">
+                                <title>${p.item.date} ${emotionLabel(p.item.emotion)}</title>
+                            </circle>
+                        `).join('')}
+                    </svg>
+                    <div class="emotion-date-row">
+                        ${labelIndexes.map(i => `<span>${data[i].date.slice(5)}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildRecentEmotionList(data) {
+            const recent = data.slice(-7).reverse();
+            return `
+                <div class="emotion-recent-list">
+                    ${recent.map(d => `
+                        <div class="emotion-recent-item ${emotionClass(d.emotion)}">
+                            <span>${d.date.slice(5)}</span>
+                            <strong>${emotionLabel(d.emotion)}</strong>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // 渲染情绪图表
+        function renderEmotionChart(data) {
+            if (!data || data.length === 0) {
+                emotionChart.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;">暂无数据</div>';
+                return;
+            }
+
+            // 统计情绪
+            let positive = 0, neutral = 0, negative = 0;
+            data.forEach(d => {
+                if (d.emotion === 'positive') positive++;
+                else if (d.emotion === 'neutral') neutral++;
+                else if (d.emotion === 'negative') negative++;
+            });
+
+            document.getElementById('positiveCount').textContent = positive;
+            document.getElementById('neutralCount').textContent = neutral;
+            document.getElementById('negativeCount').textContent = negative;
+
+            emotionChart.innerHTML = buildEmotionSummary(data) + buildEmotionSvg(data) + buildRecentEmotionList(data);
+        }
+
+        // ==================== 情绪趋势功能结束 ====================
+
+        // ==================== 语音功能 ====================
+        const voiceBtn = document.getElementById('voiceBtn');
+        const voiceSettingsBtn = document.getElementById('voiceSettingsBtn');
+        const voiceSettingsModal = document.getElementById('voiceSettingsModal');
+        const closeVoiceSettingsModal = document.getElementById('closeVoiceSettingsModal');
+        const closeVoiceSettingsBtn = document.getElementById('closeVoiceSettingsBtn');
+        const saveVoiceSettingsBtn = document.getElementById('saveVoiceSettingsBtn');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const testVoiceBtn = document.getElementById('testVoiceBtn');
+        const voiceDiagnosticsBtn = document.getElementById('voiceDiagnosticsBtn');
+        const serverVoiceBtn = document.getElementById('serverVoiceBtn');
+        const voiceDiagnosticsResult = document.getElementById('voiceDiagnosticsResult');
+        const voiceRate = document.getElementById('voiceRate');
+        const voiceRateValue = document.getElementById('voiceRateValue');
+        const enableVoiceInput = document.getElementById('enableVoiceInput');
+        const enableVoiceOutput = document.getElementById('enableVoiceOutput');
+
+        // 语音设置
+        let voiceSettings = {
+            enabledInput: true,
+            enabledOutput: false,
+            voiceURI: '',
+            rate: 1.0
+        };
+
+        // 加载语音设置
+        function loadVoiceSettings() {
+            voiceSettings.enabledInput = false;
+            voiceSettings.enabledOutput = false;
+            localStorage.setItem('voiceSettings', JSON.stringify(voiceSettings));
+            if (enableVoiceInput) enableVoiceInput.checked = false;
+            if (enableVoiceOutput) enableVoiceOutput.checked = false;
+            if (voiceRate) voiceRate.value = voiceSettings.rate || 1;
+            if (voiceRateValue) voiceRateValue.textContent = VoiceUtils.formatVoiceRate(voiceSettings.rate || 1);
+        }
+
+        // 保存语音设置
+        function saveVoiceSettings() {
+            voiceSettings.enabledInput = enableVoiceInput.checked;
+            voiceSettings.enabledOutput = enableVoiceOutput.checked;
+            voiceSettings.rate = parseFloat(voiceRate.value);
+            voiceSettings.voiceURI = voiceSelect.value;
+            localStorage.setItem('voiceSettings', JSON.stringify(voiceSettings));
+            showNotification('语音设置已保存', 'success');
+        }
+
+        function syncVoiceSettingsFromControls() {
+            voiceSettings.enabledInput = enableVoiceInput.checked;
+            voiceSettings.enabledOutput = enableVoiceOutput.checked;
+            voiceSettings.rate = parseFloat(voiceRate.value) || 1;
+            voiceSettings.voiceURI = voiceSelect.value;
+            localStorage.setItem('voiceSettings', JSON.stringify(voiceSettings));
+        }
+
+        // 打开语音设置
+        if (voiceSettingsBtn) {
+            voiceSettingsBtn.addEventListener('click', async () => {
+                voiceSettingsModal.style.display = '';
+                await loadVoices();
+            });
+        }
+
+        if (voiceDiagnosticsBtn) {
+            voiceDiagnosticsBtn.addEventListener('click', runVoiceDiagnostics);
+        }
+
+        if (serverVoiceBtn) {
+            serverVoiceBtn.addEventListener('click', toggleServerVoiceRecording);
+        }
+
+        // 关闭语音设置
+        if (closeVoiceSettingsModal) {
+            closeVoiceSettingsModal.addEventListener('click', () => voiceSettingsModal.style.display = 'none');
+        }
+        if (closeVoiceSettingsBtn) {
+            closeVoiceSettingsBtn.addEventListener('click', () => voiceSettingsModal.style.display = 'none');
+        }
+        if (voiceSettingsModal) {
+            voiceSettingsModal.addEventListener('click', (e) => {
+                if (e.target === voiceSettingsModal) voiceSettingsModal.style.display = 'none';
+            });
+        }
+
+        // 保存设置按钮
+        if (saveVoiceSettingsBtn) {
+            saveVoiceSettingsBtn.addEventListener('click', () => {
+                saveVoiceSettings();
+                voiceSettingsModal.style.display = 'none';
+            });
+        }
+
+        // 语速滑块
+        if (voiceRate) {
+            voiceRate.addEventListener('input', () => {
+                voiceRateValue.textContent = VoiceUtils.formatVoiceRate(voiceRate.value);
+                syncVoiceSettingsFromControls();
+            });
+        }
+
+        [enableVoiceInput, enableVoiceOutput, voiceSelect].forEach(control => {
+            if (control) {
+                control.addEventListener('change', syncVoiceSettingsFromControls);
+            }
+        });
+
+        // 加载可用音色
+        let availableVoices = [];
+        async function loadVoices() {
+            if (!('speechSynthesis' in window)) {
+                availableVoices = [];
+                populateVoiceSelect();
+                return;
+            }
+            return new Promise((resolve) => {
+                let settled = false;
+                const finish = () => {
+                    if (settled) return;
+                    settled = true;
+                    populateVoiceSelect();
+                    resolve();
+                };
+                const loadVoices = () => {
+                    availableVoices = speechSynthesis.getVoices();
+                    if (availableVoices.length > 0) {
+                        finish();
+                    } else {
+                        setTimeout(loadVoices, 100);
+                    }
+                };
+                loadVoices();
+                setTimeout(() => {
+                    availableVoices = speechSynthesis.getVoices();
+                    finish();
+                }, 1200);
+            });
+        }
+
+        function populateVoiceSelect() {
+            voiceSelect.innerHTML = '';
+
+            // 优先中文语音
+            const chineseVoices = availableVoices.filter(v => v.lang.includes('zh'));
+            const otherVoices = availableVoices.filter(v => !v.lang.includes('zh'));
+
+            if (chineseVoices.length === 0 && otherVoices.length === 0) {
+                voiceSelect.innerHTML = '<option value="">浏览器默认音色</option>';
+                return;
+            }
+
+            chineseVoices.forEach((voice, index) => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                if (index === 0 && !voiceSettings.voiceURI) {
+                    option.selected = true;
+                    voiceSettings.voiceURI = voice.name;
+                } else if (voiceSettings.voiceURI === voice.name) {
+                    option.selected = true;
+                }
+                voiceSelect.appendChild(option);
+            });
+
+            otherVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                if (voiceSettings.voiceURI === voice.name) {
+                    option.selected = true;
+                }
+                voiceSelect.appendChild(option);
+            });
+        }
+
+        async function runVoiceDiagnostics() {
+            if (!voiceDiagnosticsResult) return;
+            const checks = [];
+            const add = (ok, text) => checks.push(`${ok ? '通过' : '注意'}：${text}`);
+
+            add(canRequestMicrophoneHere(), canRequestMicrophoneHere()
+                ? '当前地址允许请求麦克风'
+                : '当前地址不是 HTTPS/localhost，手机浏览器通常无法授权麦克风');
+            add(Boolean(SpeechRecognition), SpeechRecognition
+                ? '浏览器支持语音识别接口'
+                : '浏览器不支持 Web Speech 语音识别，建议使用 Chrome 或 Edge');
+            add(Boolean(navigator.mediaDevices?.getUserMedia), navigator.mediaDevices?.getUserMedia
+                ? '浏览器支持麦克风采集'
+                : '浏览器不支持麦克风采集接口');
+            add('speechSynthesis' in window, ('speechSynthesis' in window)
+                ? `浏览器支持语音朗读，当前可见音色 ${availableVoices.length} 个`
+                : '浏览器不支持语音朗读');
+
+            if (canRequestMicrophoneHere() && navigator.mediaDevices?.getUserMedia) {
+                try {
+                    const permissionState = await getMicrophonePermissionState();
+                    add(permissionState !== 'denied', `麦克风权限状态：${permissionState}`);
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                    add(true, '麦克风授权和采集测试通过');
+                } catch (error) {
+                    add(false, VoiceUtils.permissionErrorMessage(error));
+                }
+            }
+
+            voiceDiagnosticsResult.style.whiteSpace = 'pre-line';
+            voiceDiagnosticsResult.textContent = checks.join('\n');
+        }
+
+        // 测试音色
+        if (testVoiceBtn) {
+            testVoiceBtn.addEventListener('click', () => {
+                syncVoiceSettingsFromControls();
+                const text = '你好，这是语音测试。我是小星日记的AI助手，很高兴为你服务。';
+                speakText(text, { force: true });
+            });
+        }
+
+        // 语音合成
+        async function speakText(text, options = {}) {
+            const force = Boolean(options.force);
+            if ((!voiceSettings.enabledOutput && !force) || !('speechSynthesis' in window)) return;
+
+            if (availableVoices.length === 0) {
+                await loadVoices();
+            }
+
+            // 取消之前的朗读
+            speechSynthesis.cancel();
+            speechSynthesis.resume?.();
+
+            // 纯文本提取（去除Markdown标记）
+            const cleanText = VoiceUtils.cleanSpeechText(text);
+
+            if (!cleanText) return;
+
+            const chunks = cleanText
+                .slice(0, 800)
+                .match(/.{1,180}(?:[，。！？；、\s]|$)/g)
+                ?.map(s => s.trim())
+                .filter(Boolean) || [cleanText.slice(0, 180)];
+            let index = 0;
+
+            // 设置音色
+            const selectedVoice = availableVoices.find(v => v.name === (voiceSelect.value || voiceSettings.voiceURI));
+
+            const speakChunk = () => {
+                if (index >= chunks.length) {
+                    voiceBtn.classList.remove('listening');
+                    return;
+                }
+
+                const utterance = new SpeechSynthesisUtterance(chunks[index]);
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                    utterance.lang = selectedVoice.lang || 'zh-CN';
+                } else {
+                    utterance.lang = 'zh-CN';
+                }
+                utterance.rate = voiceSettings.rate || 1;
+
+                utterance.onstart = () => {
+                    voiceBtn.classList.add('listening');
+                };
+                utterance.onend = () => {
+                    index += 1;
+                    speakChunk();
+                };
+                utterance.onerror = (event) => {
+                    console.warn('语音朗读失败:', event.error);
+                    voiceBtn.classList.remove('listening');
+                    showVoiceStatus('语音朗读被浏览器中断。手机端请先点一次“测试朗读”激活声音权限。', 'error');
+                };
+                speechSynthesis.speak(utterance);
+            };
+
+            speakChunk();
+        }
+
+        // 语音识别
+        let recognition = null;
+        let voiceState = 'idle'; // idle, recording, paused
+        let voiceBaseText = '';
+        let voiceFinalTranscript = '';
+        let voiceLastInterimTranscript = '';
+        let voiceRestartTimer = null;
+        let voiceStopIntentional = false;
+        let voiceMonitorStream = null;
+        let voiceAudioContext = null;
+        let voiceAnalyser = null;
+        let voiceLevelTimer = null;
+        let voicePeakLevel = 0;
+        let voiceHadRecognitionResult = false;
+        let serverVoiceRecorder = null;
+        let serverVoiceChunks = [];
+        let serverVoiceStream = null;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        function isLocalTrustHost() {
+            return VoiceUtils.isLocalTrustHost(location.hostname);
+        }
+
+        function canRequestMicrophoneHere() {
+            return VoiceUtils.canRequestMicrophone({
+                isSecureContext: window.isSecureContext,
+                hostname: location.hostname
+            });
+        }
+
+        function isTouchMobileDevice() {
+            return window.matchMedia?.('(hover: none) and (pointer: coarse)').matches || window.innerWidth <= 768;
+        }
+
+        function setVoiceButtonLabel(labelHtml) {
+            if (!voiceBtn) return;
+            voiceBtn.innerHTML = labelHtml;
+        }
+
+        function showVoiceStatus(message, type = 'info') {
+            let banner = document.getElementById('voiceStatusBanner');
+            if (!banner && voiceBtn) {
+                banner = document.createElement('div');
+                banner.id = 'voiceStatusBanner';
+                banner.className = 'voice-status-banner';
+                voiceBtn.closest('.toolbar-row')?.insertAdjacentElement('afterend', banner);
+            }
+            if (banner) {
+                banner.className = `voice-status-banner ${type}`;
+                banner.textContent = message;
+            }
+            showNotification(message, type === 'error' ? 'error' : 'info');
+        }
+
+        function ensureVoiceControlBar() {
+            let bar = document.getElementById('voiceControlBar');
+            if (bar || !voiceBtn) return bar;
+
+            bar = document.createElement('div');
+            bar.id = 'voiceControlBar';
+            bar.className = 'voice-control-bar';
+            bar.innerHTML = `
+                <div class="voice-control-actions">
+                    <button type="button" class="voice-control-btn finish" id="voiceFinishBtn">结束录音</button>
+                    <button type="button" class="voice-control-btn ghost" id="voiceClearBtn">清空转写</button>
+                </div>
+                <div class="voice-level-wrap" aria-label="麦克风音量">
+                    <span class="voice-level-label">音量</span>
+                    <span class="voice-level-meter"><span id="voiceLevelFill"></span></span>
+                </div>
+            `;
+            voiceBtn.closest('.toolbar-row')?.insertAdjacentElement('afterend', bar);
+            document.getElementById('voiceFinishBtn')?.addEventListener('click', finishVoiceSession);
+            document.getElementById('voiceClearBtn')?.addEventListener('click', clearVoiceTranscript);
+            return bar;
+        }
+
+        function showVoiceControls(show) {
+            const bar = ensureVoiceControlBar();
+            if (bar) {
+                bar.style.display = show ? 'flex' : 'none';
+            }
+        }
+
+        function updateVoiceButtonState() {
+            if (!voiceBtn) return;
+            voiceBtn.classList.toggle('recording', voiceState === 'recording');
+            voiceBtn.classList.toggle('paused', voiceState === 'paused');
+
+            if (voiceState === 'recording') {
+                setVoiceButtonLabel('<span class="btn-icon">⏸</span><span class="btn-label">暂停</span>');
+            } else if (voiceState === 'paused') {
+                setVoiceButtonLabel('<span class="btn-icon">▶</span><span class="btn-label">继续</span>');
+            } else {
+                setVoiceButtonLabel('<span class="btn-icon">🎤</span><span class="btn-label">语音</span>');
+            }
+        }
+
+        function mergeVoiceText(interimTranscript = '') {
+            const parts = [];
+            if (voiceBaseText.trim()) parts.push(voiceBaseText.trim());
+            if (voiceFinalTranscript.trim()) parts.push(voiceFinalTranscript.trim());
+            if (interimTranscript.trim()) parts.push(interimTranscript.trim());
+            userInput.value = parts.join(parts.length > 1 ? ' ' : '');
+            autoResizeTextarea(userInput);
+            userInput.focus();
+        }
+
+        function appendFinalTranscript(text) {
+            const clean = (text || '').trim();
+            if (!clean) return;
+            voiceFinalTranscript = `${voiceFinalTranscript}${voiceFinalTranscript ? ' ' : ''}${clean}`;
+            mergeVoiceText();
+        }
+
+        function clearVoiceTranscript() {
+            voiceBaseText = '';
+            voiceFinalTranscript = '';
+            userInput.value = '';
+            autoResizeTextarea(userInput);
+            userInput.focus();
+            showVoiceStatus('已清空本次语音转写。');
+        }
+
+        async function toggleServerVoiceRecording() {
+            if (serverVoiceRecorder && serverVoiceRecorder.state === 'recording') {
+                serverVoiceRecorder.stop();
+                return;
+            }
+            if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+                showVoiceStatus('当前浏览器不支持录音上传。', 'error');
+                return;
+            }
+            try {
+                serverVoiceStream = await ensureMicrophonePermission();
+                serverVoiceChunks = [];
+                const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                    ? 'audio/webm;codecs=opus'
+                    : 'audio/webm';
+                serverVoiceRecorder = new MediaRecorder(serverVoiceStream, { mimeType });
+                serverVoiceRecorder.ondataavailable = event => {
+                    if (event.data && event.data.size > 0) {
+                        serverVoiceChunks.push(event.data);
+                    }
+                };
+                serverVoiceRecorder.onstop = uploadServerVoiceRecording;
+                serverVoiceRecorder.start();
+                serverVoiceBtn.classList.add('recording');
+                serverVoiceBtn.textContent = '■ 停止';
+                serverVoiceBtn.title = '停止录音并交给服务器端语音模型转写';
+                showVoiceStatus('正在录音，点“停止并转写”后交给服务器识别。');
+            } catch (error) {
+                showVoiceStatus(error.message || '启动服务器转写录音失败', 'error');
+            }
+        }
+
+        async function uploadServerVoiceRecording() {
+            const stream = serverVoiceStream;
+            serverVoiceStream = null;
+            stream?.getTracks().forEach(track => track.stop());
+            serverVoiceBtn.classList.remove('recording');
+            serverVoiceBtn.textContent = '🎙️ 语音';
+            serverVoiceBtn.title = '录音并用服务器端语音模型转文字';
+
+            if (!serverVoiceChunks.length) {
+                showVoiceStatus('没有录到音频，请重试。', 'error');
+                return;
+            }
+
+            const blob = new Blob(serverVoiceChunks, { type: serverVoiceRecorder?.mimeType || 'audio/webm' });
+            const formData = new FormData();
+            formData.append('audio', blob, 'voice.webm');
+            showVoiceStatus('正在上传音频并转写...');
+
+            try {
+                const response = await fetch('/api/voice/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    showVoiceStatus(data.hint || data.error || '服务器转写失败', 'error');
+                    return;
+                }
+                if (data.text) {
+                    voiceBaseText = userInput.value.trim();
+                    appendFinalTranscript(data.text);
+                    showVoiceStatus('服务器转写完成，你可以编辑后发送。');
+                } else {
+                    showVoiceStatus('服务器没有识别出文字，请靠近麦克风再试一次。', 'error');
+                }
+            } catch (error) {
+                showVoiceStatus('服务器转写请求失败，请稍后重试。', 'error');
+            } finally {
+                serverVoiceChunks = [];
+                serverVoiceRecorder = null;
+            }
+        }
+
+        async function getMicrophonePermissionState() {
+            if (!navigator.permissions?.query) return 'unknown';
+            try {
+                const status = await navigator.permissions.query({ name: 'microphone' });
+                return status.state;
+            } catch (error) {
+                return 'unknown';
+            }
+        }
+
+        async function ensureMicrophonePermission() {
+            if (!canRequestMicrophoneHere()) {
+                throw new Error('手机浏览器只允许在 HTTPS 或 localhost 中授权麦克风。当前是普通 HTTP 局域网地址，请用 https 穿透地址访问，或在电脑本机 localhost 使用。');
+            }
+
+            const permissionState = await getMicrophonePermissionState();
+            if (permissionState === 'denied') {
+                throw new Error('麦克风权限已被浏览器拒绝。请点地址栏权限图标，允许麦克风后刷新页面。');
+            }
+
+            if (navigator.mediaDevices?.getUserMedia) {
+                try {
+                    return await navigator.mediaDevices.getUserMedia({ audio: true });
+                } catch (error) {
+                    throw new Error(VoiceUtils.permissionErrorMessage(error));
+                }
+            }
+            return null;
+        }
+
+        function stopVoiceMonitor() {
+            clearInterval(voiceLevelTimer);
+            voiceLevelTimer = null;
+            const fill = document.getElementById('voiceLevelFill');
+            if (fill) fill.style.width = '0%';
+            if (voiceMonitorStream) {
+                voiceMonitorStream.getTracks().forEach(track => track.stop());
+                voiceMonitorStream = null;
+            }
+            if (voiceAudioContext && voiceAudioContext.state !== 'closed') {
+                voiceAudioContext.close().catch(() => {});
+            }
+            voiceAudioContext = null;
+            voiceAnalyser = null;
+        }
+
+        function startVoiceMonitor(stream) {
+            stopVoiceMonitor();
+            voicePeakLevel = 0;
+            if (!stream || !(window.AudioContext || window.webkitAudioContext)) return;
+
+            voiceMonitorStream = stream;
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            voiceAudioContext = new AudioContextClass();
+            const source = voiceAudioContext.createMediaStreamSource(stream);
+            voiceAnalyser = voiceAudioContext.createAnalyser();
+            voiceAnalyser.fftSize = 512;
+            source.connect(voiceAnalyser);
+            const data = new Uint8Array(voiceAnalyser.fftSize);
+
+            voiceLevelTimer = setInterval(() => {
+                if (!voiceAnalyser) return;
+                voiceAnalyser.getByteTimeDomainData(data);
+                let sum = 0;
+                for (const value of data) {
+                    const diff = value - 128;
+                    sum += diff * diff;
+                }
+                const rms = Math.sqrt(sum / data.length);
+                voicePeakLevel = Math.max(voicePeakLevel, rms);
+                const percent = Math.min(100, Math.round(rms * 6));
+                const fill = document.getElementById('voiceLevelFill');
+                if (fill) fill.style.width = `${percent}%`;
+            }, 120);
+        }
+
+        function getEmptyVoiceMessage() {
+            if (voicePeakLevel < 2) {
+                return '麦克风几乎没有采到声音。请确认系统麦克风权限已打开，靠近麦克风，说话时看“音量”条是否跳动。';
+            }
+            if (!voiceHadRecognitionResult) {
+                return '麦克风已经采到声音，但旧的浏览器语音识别分支没有返回文字。请刷新页面加载新版“语音”按钮，新版会上传到服务器端 faster-whisper 转写。';
+            }
+            return '浏览器识别到了语音事件，但没有返回有效文字。请放慢语速、靠近麦克风，再试一次。';
+        }
+
+        function initSpeechRecognition() {
+            if (!SpeechRecognition || !voiceBtn) {
+                if (voiceBtn) {
+                    voiceBtn.disabled = true;
+                    setVoiceButtonLabel('<span class="btn-icon">🎤</span><span class="btn-label">不支持</span>');
+                }
+                console.warn('浏览器不支持Web Speech语音识别');
+                return;
+            }
+
+            if (!canRequestMicrophoneHere()) {
+                setVoiceButtonLabel('<span class="btn-icon">🔒</span><span class="btn-label">需HTTPS</span>');
+                voiceBtn.title = '当前地址无法授权麦克风，请使用 HTTPS 公网地址或 localhost。';
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'zh-CN';
+            recognition.continuous = !isTouchMobileDevice();
+            recognition.interimResults = true;
+
+            recognition.onstart = () => {
+                voiceState = 'recording';
+                voiceStopIntentional = false;
+                voiceHadRecognitionResult = false;
+                voiceLastInterimTranscript = '';
+                updateVoiceButtonState();
+                showVoiceControls(true);
+                showVoiceStatus('正在听你说话。需要停一下就点“暂停”，说完点“结束录音”。');
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                voiceHadRecognitionResult = true;
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        appendFinalTranscript(transcript);
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                if (interimTranscript.trim()) {
+                    voiceLastInterimTranscript = interimTranscript.trim();
+                    mergeVoiceText(interimTranscript);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('语音识别错误', event.error);
+                const messages = {
+                    'not-allowed': '麦克风未授权。手机端请使用 HTTPS 地址，并在浏览器权限中允许麦克风。',
+                    'service-not-allowed': '浏览器阻止了语音识别服务。请换用 Chrome/Edge，或改用 HTTPS 地址。',
+                    'network': '语音识别服务网络不可用，请检查网络后重试。',
+                    'no-speech': '没有识别到声音，请靠近麦克风再试一次。',
+                    'audio-capture': '没有检测到麦克风输入。'
+                };
+                if (event.error === 'aborted' && voiceStopIntentional) {
+                    return;
+                }
+                if (event.error === 'no-speech' && voiceState === 'recording') {
+                    showVoiceStatus('暂时没有识别到声音，你可以继续说，也可以点“暂停”。');
+                    return;
+                }
+                showVoiceStatus(VoiceUtils.recognitionErrorMessage(event.error), 'error');
+                finishVoiceSession();
+            };
+
+            recognition.onend = () => {
+                if (voiceState === 'recording' && !voiceStopIntentional) {
+                    if (isTouchMobileDevice()) {
+                        finishVoiceSession();
+                        return;
+                    }
+                    clearTimeout(voiceRestartTimer);
+                    voiceRestartTimer = setTimeout(() => {
+                        if (voiceState === 'recording') {
+                            try {
+                                recognition.start();
+                            } catch (error) {
+                                console.warn('语音识别自动继续失败:', error);
+                            }
+                        }
+                    }, 250);
+                    return;
+                }
+
+                updateVoiceButtonState();
+            };
+        }
+
+        if (voiceBtn) {
+            initSpeechRecognition();
+            voiceBtn.addEventListener('click', async () => {
+                if (!voiceSettings.enabledInput) {
+                    showVoiceStatus('语音输入未启用，请先在设置中开启。', 'error');
+                    return;
+                }
+
+                if (!recognition) {
+                    showVoiceStatus('当前浏览器不支持语音识别。建议使用 Chrome 或 Edge。', 'error');
+                    return;
+                }
+
+                if (voiceState === 'recording') {
+                    pauseVoiceSession();
+                    return;
+                }
+
+                if (voiceState === 'paused') {
+                    await resumeVoiceSession();
+                    return;
+                }
+
+                try {
+                    await startVoiceSession();
+                } catch (error) {
+                    console.error('启动语音识别失败', error);
+                    showVoiceStatus(error.message || '启动语音识别失败', 'error');
+                    finishVoiceSession();
+                }
+            });
+        }
+
+        async function startVoiceSession() {
+            const stream = await ensureMicrophonePermission();
+            voiceBaseText = userInput.value.trim();
+            voiceFinalTranscript = '';
+            voiceLastInterimTranscript = '';
+            voiceHadRecognitionResult = false;
+            voiceState = 'recording';
+            voiceStopIntentional = false;
+            if (isTouchMobileDevice()) {
+                stream?.getTracks().forEach(track => track.stop());
+                stopVoiceMonitor();
+            } else {
+                startVoiceMonitor(stream);
+            }
+            updateVoiceButtonState();
+            showVoiceControls(true);
+            recognition.continuous = !isTouchMobileDevice();
+            recognition.start();
+        }
+
+        function pauseVoiceSession() {
+            if (!recognition || voiceState !== 'recording') return;
+            voiceState = 'paused';
+            voiceStopIntentional = true;
+            clearTimeout(voiceRestartTimer);
+            stopVoiceMonitor();
+            try {
+                recognition.stop();
+            } catch (error) {
+                console.warn('暂停语音识别失败:', error);
+            }
+            updateVoiceButtonState();
+            showVoiceStatus('已暂停，当前转写内容已保留。点“继续”可以接着说。');
+        }
+
+        async function resumeVoiceSession() {
+            if (!recognition || voiceState !== 'paused') return;
+            try {
+                const stream = await ensureMicrophonePermission();
+                voiceState = 'recording';
+                voiceStopIntentional = false;
+                if (isTouchMobileDevice()) {
+                    stream?.getTracks().forEach(track => track.stop());
+                    stopVoiceMonitor();
+                } else {
+                    startVoiceMonitor(stream);
+                }
+                updateVoiceButtonState();
+                recognition.continuous = !isTouchMobileDevice();
+                recognition.start();
+                showVoiceStatus('已继续录音，会在当前内容后继续追加。');
+            } catch (error) {
+                showVoiceStatus('继续录音失败，请点“结束录音”后重新开始。', 'error');
+            }
+        }
+
+        function finishVoiceSession() {
+            clearTimeout(voiceRestartTimer);
+            const wasActive = voiceState !== 'idle';
+            voiceState = 'idle';
+            voiceStopIntentional = true;
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch (error) {
+                    // ignore stop errors from inactive recognizers
+                }
+            }
+            stopVoiceMonitor();
+            if (!userInput.value.trim() && voiceLastInterimTranscript.trim()) {
+                mergeVoiceText(voiceLastInterimTranscript);
+            }
+            updateVoiceButtonState();
+            showVoiceControls(false);
+            if (wasActive) {
+                showVoiceStatus(
+                    userInput.value.trim() ? '语音转写已完成，你可以编辑后发送。' : getEmptyVoiceMessage(),
+                    userInput.value.trim() ? 'info' : 'error'
+                );
+            }
+        }
+
+        // 初始化语音功能
+        loadVoiceSettings();
+
+        // 监听音色加载
+        if ('speechSynthesis' in window) {
+            speechSynthesis.onvoiceschanged = () => {
+                if (voiceSettingsModal && voiceSettingsModal.style.display !== 'none') {
+                    loadVoices();
+                }
+            };
+        }
+
+        // ==================== 语音功能结束 ====================
+
+        // 点击图片按钮
+        if (imageBtn && imageInput) {
+            imageBtn.addEventListener('click', () => {
+                imageInput.click();
+            });
+
+            // 选择图片
+            imageInput.addEventListener('change', async (e) => {
+                const files = e.target.files;
+                if (!files.length) return;
+
+                for (let file of files) {
+                    if (!file.type.startsWith('image/')) continue;
+
+                    // 上传图片
+                    try {
+                        const formData = new FormData();
+                        formData.append('image', file);
+
+                        const res = await fetch('/api/upload/image', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (res.ok) {
+                            const data = await res.json();
+                            pendingImages.push(data.url);
+                            // 显示预览
+                            showImagePreview(data.url);
+                        } else {
+                            alert('图片上传失败');
+                        }
+                    } catch (err) {
+                        console.error('上传失败', err);
+                        alert('图片上传失败');
+                    }
+                }
+
+                imageInput.value = '';
+            });
+        }
+
+        // 显示图片预览
+        function showImagePreview(url) {
+            let preview = document.getElementById('imagePreview');
+            if (!preview) {
+                preview = document.createElement('div');
+                preview.id = 'imagePreview';
+                preview.className = 'image-preview';
+                userInput.parentNode.insertBefore(preview, userInput);
+            }
+
+            const item = document.createElement('div');
+            item.className = 'image-preview-item';
+            item.innerHTML = `
+                <img src="${url}" alt="预览">
+                <button class="remove-btn" onclick="this.parentElement.remove();">×</button>
+            `;
+            preview.appendChild(item);
+        }
+
+        // 修改sendMessage以支持图片（通过window挂载）
+        const originalSendMessage = window.DiaryApp && window.DiaryApp.sendMessage;
+        const originalAppendMessage = window.DiaryApp && window.DiaryApp.appendMessage;
+
+        // 包装appendMessage以支持语音朗读
+        if (originalAppendMessage) {
+            window.DiaryApp.appendMessage = function(role, content, sources, scroll, images) {
+                // 调用原始函数
+                const result = originalAppendMessage(role, content, sources, scroll, images);
+
+                // 如果是AI回复且启用了语音输出，进行朗读
+                if (role === 'assistant' && voiceSettings.enabledOutput) {
+                    // 延迟一点时间，让消息先显示
+                    setTimeout(() => {
+                        speakText(content);
+                    }, 300);
+                }
+
+                return result;
+            };
+        }
+
+        if (originalSendMessage) {
+            window.DiaryApp.sendMessage = async function(message) {
+                if (!message || !message.trim()) return;
+
+                // 获取待发送的图片
+                const imagesToSend = [...pendingImages];
+                console.log('[包装函数] pendingImages:', pendingImages.length, '张');
+                console.log('[包装函数] imagesToSend:', imagesToSend);
+                pendingImages = [];
+
+                // 清除预览
+                const preview = document.getElementById('imagePreview');
+                if (preview) preview.remove();
+
+                // 调用原始的sendMessage，传递图片作为单独参数
+                console.log('[包装函数] 调用原始sendMessage');
+                return originalSendMessage(message, imagesToSend);
+            };
+        }
+
+        // 退出登录
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                if (confirm('确定要退出登录吗？')) {
+                    await fetch('/api/logout', { method: 'POST' });
+                    window.location.href = '/login';
+                }
+            });
+        }
+
+        // 页面加载时执行
+        console.log('页面加载完成，初始化为日记模式');
+        loadConversation();  // 加载对话历史
+        switchMode('diary');
+        setTimeout(() => {
+            if (window.DiaryApp && window.DiaryApp.scrollMessagesToBottom) {
+                window.DiaryApp.scrollMessagesToBottom(messagesDiv, messagesDiv.lastElementChild, { smooth: false });
+            }
+        }, 250);
+    }); // DOMContentLoaded 结束
+    </script>
+</body>
+</html>
