@@ -208,12 +208,3 @@ python -m unittest discover tests -v
 - 商业使用、公司内部部署、二次开发销售、SaaS 服务化部署等，需要先获得作者书面授权
 
 Commercial use requires prior written permission from the author.
-
-## 发布前检查
-
-```powershell
-git status --short
-git ls-files
-```
-
-确认不要提交 `.env`、`data/`、`static/uploads/`、日志和缓存。
